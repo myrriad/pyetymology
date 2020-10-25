@@ -1,0 +1,7 @@
+# 0. replace -- with # to create python comments
+# 1. replace <<\t(.*?) = >> with <<\t"$1": >> enclose keys with "s and use colons instead of equals signs
+# 2. replace <<,\n}>> with <<\n}>> get rid of trailing commas
+# 3. check for some lines that use 4 spaces instead of a tab
+# 4. check for some lines that don't exactly have " = " and may be missing spaces, ie. " =". (Check for errors in a python IDE.)
+
+
