@@ -16,7 +16,7 @@ def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=Non
 
     dom = res.get_sections()
     # print(pprint(dom))
-    dom = helper.get_by_lang(dom, lang)
+    dom = helper.sections_by_lang(dom, lang)
 
     _exhausted = object()
     if not dom or next(dom, _exhausted) == _exhausted:
@@ -26,10 +26,13 @@ def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=Non
     lemma_flag = False
     sections = helper.sections_by_level(dom, 3)
 
-    def add_node(G, node):
-        global colors
-        color = colors[origin.o_id]
-        G.add_node(node, id=origin.o_id, color=color)
+    def add_node(G, node, colorize=True):
+        if colorize:
+            global colors
+            color = colors[origin.o_id]
+            G.add_node(node, id=origin.o_id, color=color)
+        else:
+            G.add_node(node, id=origin.o_id)
 
     for sec in sections:
 
@@ -85,7 +88,10 @@ def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=Non
             # prev = origin
             prev = replacement_origin
             # add_node(G, origin)
-            add_node(G, replacement_origin)
+            add_node(G, replacement_origin, colorize=replacement_origin is origin)
+            # if replacement_origin is not the origin, then that means that the origin was replaced
+            # by a preexisting node that was already colored
+            # therefore we should not colorize it
 
             between_text = []
 

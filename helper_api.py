@@ -47,7 +47,7 @@ def sections_by_level(sections: List[Wikicode], level: int) -> Generator[List[Wi
     yield builder
 
 
-def get_by_lang(sections: List[Wikicode], lang) -> Generator[Wikicode, None, None]:
+def sections_by_lang(sections: List[Wikicode], lang) -> Generator[Wikicode, None, None]:
     in_section = False
     for sec in sections:
 
@@ -102,4 +102,4 @@ def contains_originator(G: nx.Graph, origin: Originator):
             node: EtyRelation
             if node.matches_query(origin.me):
                 return node
-    return False
+    return None

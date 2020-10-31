@@ -95,12 +95,14 @@ while(not original_query): # if original query is "", then keep repeating it
     # We want to connect these two graphs,
     # so we take our query's origin and try to find
     # a node from our big, working tree GG.
+
+    G, origin = graph(*_query, replacement_origin=GG_origin)
+    draw_graph(G, origin)
+
     if GG_origin:
         pass # good, we found a connection
     else:
-        raise Exception("Unconnected query " + GG_origin)
-    G, origin = graph(*_query, replacement_origin=GG_origin)
-    draw_graph(G, origin)
+        raise Exception("Unconnected query " + str(GG_origin))
 
     #fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
     GG2 = nx.compose(GG, G)
