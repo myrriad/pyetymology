@@ -1,10 +1,16 @@
 import grandalf
 import mwparserfromhell as mwp
+
+import pyetymology.etyobjects
 from pyetymology import helper_api as helper
 import networkx as nx
 import pyetymology.langcode as langcode
 import matplotlib.pyplot as plt
-def ety_parse_routine(wikitext, me, word, lang, def_id):
+
+colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
+def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=None):
+    if replacement_origin is None:
+        replacement_origin = origin
     res = mwp.parse(wikitext)
     # res = wtp.parse(wikitext)
 
@@ -17,19 +23,30 @@ def ety_parse_routine(wikitext, me, word, lang, def_id):
         raise Exception(f"Word \"{word}\" has no entry under language {lang}")
 
     ety_flag = False
-    sections = helper.get_by_level(dom, 3)
+    lemma_flag = False
+    sections = helper.sections_by_level(dom, 3)
+
+    def add_node(G, node):
+        global colors
+        color = colors[origin.o_id]
+        G.add_node(node, id=origin.o_id, color=color)
 
     for sec in sections:
 
-        """
-        if sec[0].startswith("===Verb==="):
-            for subsec in helper.get_by_level(sec, 4):
-                pass# print("-"+repr(subsec))
-        el"""
-        if sec[0].startswith("===Etymology") and not sec[0].startswith("===Etymology==="):
+        if (sec[0].startswith("===Etymology") and not sec[0].startswith("===Etymology===")) \
+                or (sec[0].startswith("===Verb") and not sec[0].startswith("===Verb===")):
             # Therefore, if it starts with something like ===Etymology 1===
             if def_id is None:
                 def_id = input("Multiple definitions detected. Enter an ID: ")
+        """
+        if sec[0].startswith("===Verb===") or sec[0].startswith(f"===Verb {def_id}"):
+            for subsec in helper.sections_by_level(sec, 4):
+                for node in sec[0].ifilter(recursive=False):
+                    if isinstance(node, mwp.wikicode.Template):
+
+                        pass# print("-"+repr(subsec))
+        """
+
         if sec[0].startswith("===Etymology===") or sec[0].startswith(f"===Etymology {def_id}"):
             if not ety_flag:
                 ety_flag = True
@@ -45,7 +62,7 @@ def ety_parse_routine(wikitext, me, word, lang, def_id):
                 # if etytemp
 
                 if isinstance(node, mwp.wikicode.Template):
-                    etyr = helper.EtyRelation(node)
+                    etyr = pyetymology.etyobjects.EtyRelation(origin, node)
                     # print(str(etyr))
                     if not dotyet:
                         firstsentence.append(etyr)
@@ -61,68 +78,56 @@ def ety_parse_routine(wikitext, me, word, lang, def_id):
                             firstsentence.append(
                                 node)  # if we haven't reached the period, we're in the middle. capture that node
 
-            print("1st " + repr(firstsentence))
+            print("1st sentence is " + repr(firstsentence))
             ancestry = []
 
             G = nx.DiGraph()
-            prev = me
-            G.add_node(me, pos=(0, 0))
+            # prev = origin
+            prev = replacement_origin
+            # add_node(G, origin)
+            add_node(G, replacement_origin)
 
             between_text = []
 
             check_type = False
             cache = langcode.cache.Cache(4)
-            for bib in firstsentence:  # time to analyze the immediate etymology ("ancestry")
-                if bib is None:
+            for token in firstsentence:  # time to analyze the immediate etymology ("ancestry")
+                if token is None:
                     continue
-                if isinstance(bib, helper.EtyRelation):
-                    bib: helper.EtyRelation
-                    cache.put(bib)
+                if isinstance(token, pyetymology.etyobjects.EtyRelation):
+                    token: pyetymology.etyobjects.EtyRelation
+                    cache.put(token)
 
-                    if any(helper.is_in(bib.rtype, x) for x in
-                           (helper.EtyRelation.ety_abbrs, helper.EtyRelation.aff_abbrs, helper.EtyRelation.sim_abbrs)):
+                    if any(helper.is_in(token.rtype, x) for x in
+                           (pyetymology.etyobjects.EtyRelation.ety_abbrs, pyetymology.etyobjects.EtyRelation.aff_abbrs,
+                            pyetymology.etyobjects.EtyRelation.sim_abbrs)):
                         # inh, der, bor, m
                         # print(between_text)
                         if any("+" in s for s in
-                               between_text):  # or helper_api.is_in(bib.rtype, helper_api.EtyRelation.aff_abbrs):
+                               between_text):  # or helper_api.is_in(token.rtype, helper_api.EtyRelation.aff_abbrs):
                             prevs_parents = G.edges(nbunch=prev)  #
                             # prev2 = cache.nth_prev(2)
                             # print("parnt: " + str(parnt))
                             parnt = next(iter(prevs_parents), (None, None))[1]
                             # parnt = prev2
-                            G.add_node(bib)
-                            G.add_edge(bib, parnt)
+                            add_node(G, token)
+                            G.add_edge(token, parnt)
                             # print(cache.array)
 
                             # sister node
                         else:
-                            G.add_node(bib)
+                            add_node(G, token)
                             if prev:
-                                G.add_edge(bib, prev)
-                        prev = bib
+                                G.add_edge(token, prev)
+                        prev = token
                     else:
-                        print(bib)
+                        print(token)
                     between_text = []
                 else:
-                    between_text.append(bib)
+                    between_text.append(token)
 
-            print("...drawing graph...")
-            # print(G.size())
-            pos = nx.get_node_attributes(G, 'pos')
-            g = grandalf.utils.convert_nextworkx_graph_to_grandalf(G)
-            from grandalf.layouts import SugiyamaLayout
-            class defaultview(object):
-                w, h = 10, 10
-
-            for v in g.V(): v.view = defaultview()
-            sug = SugiyamaLayout(g.C[0])
-            sug.init_all()  # roots=[V[0]]) #, inverted_edges=[V[4].e_to(V[0])])
-            sug.draw()
-            poses = {v.data: (-v.view.xy[0], -v.view.xy[1]) for v in g.C[0].sV}
-            nx.draw(G, pos=poses, with_labels=True)
-            plt.show()
-
+            yield G
         else:
             pass  # print(repr(sec))
-    if not ety_flag:
+    if not ety_flag and not lemma_flag:
         raise Exception("Etymology not detected. (If a word has multiple definitions, you must specify it.)")
