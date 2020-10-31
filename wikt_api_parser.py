@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=None):
+
     if replacement_origin is None:
         replacement_origin = origin
     res = mwp.parse(wikitext)
@@ -16,6 +17,19 @@ def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=Non
 
     dom = res.get_sections()
     # print(pprint(dom))
+    if not lang or lang == "" or lang is None:
+        # try to extract lang from dom
+        found_langs = helper.all_lang_sections(dom)
+        def _compr(found_langs):
+            for found_lang in found_langs:
+                h = found_lang[0][2:] # found_lang should be array of length 1, because recursive is false
+                yield h[:h.index("==")]
+        lang_options = list(_compr(found_langs))
+        if len(lang_options) == 1:
+            lang = lang_options[0]
+        else:
+            lang = input("Choose a lang from these options: " + str(lang_options))
+
     dom = helper.sections_by_lang(dom, lang)
 
     _exhausted = object()

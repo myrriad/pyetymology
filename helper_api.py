@@ -19,7 +19,7 @@ If there is a subheader, it will be packaged after the specified main header tha
 """
 
 
-def sections_by_level(sections: List[Wikicode], level: int) -> Generator[List[Wikicode], None, None]:
+def sections_by_level(sections: List[Wikicode], level: int, recursive=True) -> Generator[List[Wikicode], None, None]:
     in_section = False
     prefix = "=" * level
     childprefix = prefix + "="
@@ -35,7 +35,8 @@ def sections_by_level(sections: List[Wikicode], level: int) -> Generator[List[Wi
             continue
         if sec.startswith(childprefix):  # if it's a child
             # print(repr(sec))
-            builder.append(sec)
+            if recursive:
+                builder.append(sec)
             continue
         if has_exact_prefix(sec, prefix):  # we've reached the next header
             yield builder  # yield it
@@ -63,6 +64,9 @@ def sections_by_lang(sections: List[Wikicode], lang) -> Generator[Wikicode, None
         if in_section and has_exact_prefix(sec, "=="):  # we've reached the next header
             in_section = False
             break
+
+def all_lang_sections(sections: List[Wikicode], recursive=False) -> Generator[Wikicode, None, None]:
+    return sections_by_level(sections, 2, recursive)
 import grandalf.utils as grutils
 import networkx as nx
 import matplotlib.pyplot as plt

@@ -63,6 +63,8 @@ def query(me):
     if "parse" in jsn:
         wikitext = jsn["parse"]["wikitext"]
     elif "error" in jsn:
+        print(src)
+        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
         raise Exception("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]))
     else:
         raise Exception("Response malformed!" + str(jsn))
@@ -73,10 +75,9 @@ def graph(wikitext, origin, word, lang, def_id, src, word_urlify, replacement_or
     try:
         G = list(iter(wikt_api_parser.parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=replacement_origin)))
     except Exception as e:
-        print(e)
         print(src)
         print(f"https://en.wiktionary.org/wiki/{word_urlify}")
-        exit(1)
+        raise e
 
     print(src)
     print(f"https://en.wiktionary.org/wiki/{word_urlify}")

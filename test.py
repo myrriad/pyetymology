@@ -2,7 +2,7 @@ import pickle
 
 with open('pyetymology/response.pkl', 'rb') as _input:
     res = pickle.load(_input)
-
+raise Exception("SHOW ME!")
 exit(0)
 
 from grandalf.graphs import Vertex,Edge,Graph,graph_core
