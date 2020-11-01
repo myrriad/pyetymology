@@ -1,4 +1,5 @@
 import pickle
+print(+1)
 
 with open('pyetymology/response.pkl', 'rb') as _input:
     res = pickle.load(_input)

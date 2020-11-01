@@ -217,7 +217,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
                 # if etytemp
 
                 if isinstance(node, mwp.wikicode.Template):
-                    etyr = pyetymology.etyobjects.EtyRelation(origin, node)
+                    etyr = EtyRelation(origin, node)
                     # print(str(etyr))
                     if not dotyet:
                         firstsentence.append(etyr)
@@ -238,7 +238,10 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
 
             G = nx.DiGraph()
             # prev = origin
+
             prev = replacement_origin
+
+
             # add_node(G, origin)
             add_node(G, replacement_origin, colorize=replacement_origin is origin)
             # if replacement_origin is not the origin, then that means that the origin was replaced
@@ -252,13 +255,13 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
             for token in firstsentence:  # time to analyze the immediate etymology ("ancestry")
                 if token is None:
                     continue
-                if isinstance(token, pyetymology.etyobjects.EtyRelation):
-                    token: pyetymology.etyobjects.EtyRelation
+                if isinstance(token, EtyRelation):
+                    token: EtyRelation
                     cache.put(token)
 
                     if any(helper.is_in(token.rtype, x) for x in
-                           (pyetymology.etyobjects.EtyRelation.ety_abbrs, pyetymology.etyobjects.EtyRelation.aff_abbrs,
-                            pyetymology.etyobjects.EtyRelation.sim_abbrs)):
+                           (EtyRelation.ety_abbrs, EtyRelation.aff_abbrs,
+                            EtyRelation.sim_abbrs)):
                         # inh, der, bor, m
                         # print(between_text)
                         if any("+" in s for s in
@@ -277,7 +280,8 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
                             add_node(G, token)
                             if prev:
                                 G.add_edge(token, prev)
-                        prev = token
+                        if not helper.is_in(token.rtype, EtyRelation.sim_abbrs): # if it's an etymological or affixal relation, but NOT a mention
+                            prev = token
                     else:
                         print(token)
                     between_text = []

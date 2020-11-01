@@ -73,10 +73,10 @@ def query(me):
         raise Exception("Response malformed!" + str(jsn))
     # print(wikitext)
 
-    res, dom = wikt_api_parser.wikitextparse(wikitext)
+    res, dom = helper.wikitextparse(wikitext)
     # Here was the lang detection
 
-    dom, me, word, lang = wikt_api_parser.validate(dom, me, word, lang)
+    dom, me, word, lang = helper.validate(dom, me, word, lang)
     assert me
     assert word
     assert lang
@@ -88,7 +88,7 @@ def query(me):
     return query, wikiresponse, origin, src, word_urlify
 def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
     try:
-        G = list(iter(wikt_api_parser.parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)))
+        G = list(iter(helper.parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)))
     except Exception as e:
         print(src)
         print(f"https://en.wiktionary.org/wiki/{word_urlify}")
@@ -104,6 +104,7 @@ def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None
 
 GG, origin = graph(*query(original_query))
 draw_graph(GG, origin)
+_ = [print(x) for x in GG.nodes]
 while(not original_query): # if original query is "", then keep repeating it
     _query = query(original_query) # parse the query
     _, _, query_origin, _, _ = _query # extract from origin of query from variable scope dump
@@ -121,7 +122,8 @@ while(not original_query): # if original query is "", then keep repeating it
         GG2 = nx.compose(GG, G)
     else:
         warnings.warn("Unconnected query " + str(origin))
-        GG2 = G
+        GG = G
+        continue
 
 
 
@@ -134,7 +136,7 @@ while(not original_query): # if original query is "", then keep repeating it
     else:
         raise Exception("Unconnected query " + origin)
     """
-
+    _ = [print(x) for x in GG.nodes]
     draw_graph(GG2, origin)
     GG = GG2
 
