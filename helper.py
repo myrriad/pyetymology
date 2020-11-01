@@ -1,160 +1,291 @@
-from bs4 import NavigableString, CData, Tag, BeautifulSoup, Comment
+import grandalf
+import mwparserfromhell as mwp
+from mwparserfromhell.wikicode import Wikicode
+
+import grandalf.utils as grutils
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
+import pyetymology.etyobjects
+from pyetymology import helper as helper
+import pyetymology.langcode as langcode
 
-def all_text_linked(elem, strip=False, types=(NavigableString, CData), amount="full"):
-    ancestry = amount == "until_period"
-    for descendant in elem.descendants:
-        # return "a" string representation if we encounter it
-        if isinstance(descendant, Tag) and descendant.name == 'a':
-            to = descendant['href']
-            if 'wikipedia.org' in to:
-                to = to[to.index('wikipedia.org/wiki') + 18:]
-                to = 'pedia' + to
-            child = descendant.string
-            yield '<' + child + '|' + str(to) + '>'
+### START helper_api.py
+from typing import List, Generator, Dict
 
-        #  inner text node inside each "a"
-        if isinstance(descendant, NavigableString) and descendant.parent.name == 'a':
-            continue # Ignore for now
+import mwparserfromhell
+# from mwparserfromhell.wikicode import Wikicode
 
-        if (
-                (types is None and not isinstance(descendant, NavigableString))
-                or
-                (types is not None and type(descendant) not in types)):
-            continue
-        if strip:
-            descendant = descendant.strip()
-            if len(descendant) == 0:
+from pyetymology.etyobjects import EtyRelation, Originator
+
+
+def has_exact_prefix(str, prefix):
+    return str.startswith(prefix) and not str.startswith(prefix + "=")
+
+
+"""
+Takes in parameter l, which corresponds to a "main" heading level.
+Yields each "main" header of that specified heading level.
+If there is a subheader, it will be packaged after the specified main header that precedes it
+
+"""
+
+
+def sections_by_level(sections: List[Wikicode], level: int, recursive=True) -> Generator[List[Wikicode], None, None]:
+    in_section = False
+    prefix = "=" * level
+    childprefix = prefix + "="
+    builder = []
+    for sec in sections:
+
+        if not in_section:
+            if has_exact_prefix(sec, prefix):  # we've reached the desired section
+                # print(repr(sec))
+                in_section = True
+                builder.append(sec)
                 continue
-        if ancestry and '.' in descendant:  # if we're returning only ancestry, then break if we reach a period
-            yield descendant[:descendant.index('.')+1]
-            return
-        yield descendant
-
-
-def links_only(elem, strip=False, types=(NavigableString, CData), target="full", wikipedia=False):
-    ancestry = target == "until_period"
-    for descendant in elem.descendants:
-        # return "a" string representation if we encounter it
-        if isinstance(descendant, Tag) and descendant.name == 'a':
-            to = descendant['href']
-            if 'wikipedia.org' in to:
-                if not wikipedia:
-                    continue
-                to = to[to.index('wikipedia.org/wiki') + 18:]
-                to = 'pedia' + to
-            elif '/wiki/' in to:
-                to = to[to.index('/wiki/') + 6:]
-            elif '&action=edit&redlink=1' in to:
-                if to.index('/w/index.php?title=') != 0:
-                    raise Exception(to + " is an unexpected redlink")
-                to= '?' + to[19:to.index('&action=edit&redlink=1')]
-            child = descendant.string
-            # yield child + '<' + str(to) + '>'
-            yield str(to)
-
-        if ancestry and '.' in descendant:  # if we're returning only ancestry, then break if we reach a period
-            return
-
-        #  inner text node inside each "a"
-        if isinstance(descendant, NavigableString) and descendant.parent.name == 'a':
-            continue # Ignore for now
-
-        if (
-                (types is None and not isinstance(descendant, NavigableString))
-                or
-                (types is not None and type(descendant) not in types)):
             continue
-        if strip:
-            descendant = descendant.strip()
-            if len(descendant) == 0:
-                continue
+        if sec.startswith(childprefix):  # if it's a child
+            # print(repr(sec))
+            if recursive:
+                builder.append(sec)
+            continue
+        if has_exact_prefix(sec, prefix):  # we've reached the next header
+            yield builder  # yield it
+            builder = []  # start building again
+            builder.append(sec)
+            continue
+        # if it's neither a child nor a sibling, therefore it's a parent
+        break
+    yield builder
 
 
+def sections_by_lang(sections: List[Wikicode], lang) -> Generator[Wikicode, None, None]:
+    in_section = False
+    for sec in sections:
+
+        if not in_section and sec.startswith("==" + lang):  # we've reached the desired section
+            # print(repr(sec))
+            in_section = True
+            yield sec
+            continue
+        if in_section and sec.startswith("==="):
+            # print(repr(sec))
+            yield sec
+            continue
+        if in_section and has_exact_prefix(sec, "=="):  # we've reached the next header
+            in_section = False
+            break
 
 
+def all_lang_sections(sections: List[Wikicode], recursive=False) -> Generator[Wikicode, None, None]:
+    return sections_by_level(sections, 2, recursive)
 
 
+def draw_graph(G, origin):
+    print("...drawing graph...")
 
-def fetch(query, session):
-    if query.startswith('?'):
-        raise Exception(query + " starts with a ?. ? is used internally to signify redlinks")
-    if query.startswith('Reconstruction:'):
-        url = "https://en.wiktionary.org/wiki/" + query + "?printable=yes"
-        word = query[query.index('/')+1:]
-        lang = query[query.index(':')+1:query.index('/')]
-    else:
-        tup = query.split('#')
-        if len(tup) != 2:
-            raise Exception(tup)
-        word, lang = tup
-        url = "https://en.wiktionary.org/wiki/" + word + "?printable=yes"
+    g = grutils.convert_nextworkx_graph_to_grandalf(G)
+    from grandalf.layouts import SugiyamaLayout
 
-    # formatting
-    lang = lang.title()  # language capitalized
+    class DefaultView(object):
+        w, h = 10, 10
 
-    response = session.get(url)
-    soup = BeautifulSoup(response.text.replace('>\n<', '><'),
-                         'html.parser')  # remove newlines between tags (ie. <a></a> /n <div></div>)
+    for v in g.V(): v.view = DefaultView()
+    sug = SugiyamaLayout(g.C[0])
+    sug.init_all()  # roots=[V[0]]) #, inverted_edges=[V[4].e_to(V[0])])
+    sug.draw()
+    poses = {v.data: (-v.view.xy[0], -v.view.xy[1]) for v in g.C[0].sV}
 
-    unwanted_classes = ['sister-wikipedia', 'thumb', 'mw-references-wrap', 'cited-source', 'reference']
-    for unw in soup.find_all(True, {'class': unwanted_classes}):
-        unw.extract()
-        # unw.parent.extract()
-    comments = soup.find_all(text=lambda text: isinstance(text, Comment))
-    for comment in comments:  # remove comments
-        comment.extract()
+    node_colors = nx.get_node_attributes(G, 'color')
+    nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
+    # x.draw_networkx_edges(G, pos=poses)
 
-    langnames = soup.find(id=lang).parent  # type: PageElement
-    ancestry = progeny = []
+    plt.show()
 
-    for tag in langnames.next_siblings:
-        if tag.name == "h2":  # break if we have reached the next language subsection
-            if tag.find("span", {"class": "mw-headline"}):
-                break
+
+def is_in(elem, abbr_set: Dict[str, str]):
+    return elem in abbr_set.keys() or elem in abbr_set.values()
+
+
+"""
+Returns the node that contains the originator; otherwise returns false
+"""
+
+
+def contains_originator(G: nx.Graph, origin: Originator):
+    for node in G.nodes:
+        if isinstance(node, EtyRelation):
+            node: EtyRelation
+            if node.matches_query(origin.me):
+                return node
+    return None
+
+
+### END helper_api.py
+
+
+colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
+
+
+def wikitextparse(wikitext):
+    res = mwp.parse(wikitext)  # type: Wikicode
+    # res = wtp.parse(wikitext)
+
+    dom = res.get_sections()
+    return res, dom
+
+
+"""
+Returns sections of only 1 lang
+"""
+
+
+def validate(dom, me, word, lang):
+    if not lang or lang == "" or lang is None:
+        # try to extract lang from dom
+        found_langs = helper.all_lang_sections(dom)
+
+        def _compr(found_langs):
+            for found_lang in found_langs:
+                h = found_lang[0][2:]  # found_lang should be array of length 1, because recursive is false
+                yield h[:h.index("==")]
+
+        lang_options = list(_compr(found_langs))
+        if len(lang_options) == 1:
+            lang = lang_options[0]
+        else:
+            while not lang or lang == "" or lang is None:
+                lang = input("Choose a lang from these options: " + str(lang_options))
+
+    me = word + "#" + lang
+    lang_secs = helper.sections_by_lang(dom, lang)
+
+    _exhausted = object()
+    if not lang_secs or next(lang_secs, _exhausted) == _exhausted:
+        raise Exception(f"Word \"{word}\" has no entry under language {lang}")
+    return lang_secs, me, word, lang
+
+
+def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
+    me, word, lang, def_id = query
+    _, _, dom = wikiresponse  # res, wikitext, dom
+    if replacement_origin is None:
+        replacement_origin = origin
+
+    ety_flag = False
+    lemma_flag = False
+    sections = helper.sections_by_level(dom, 3)
+
+    def add_node(G, node, colorize=True):
+        if colorize:
+            global colors
+            color = colors[origin.o_id]
+            G.add_node(node, id=origin.o_id, color=color)
+        else:
+            G.add_node(node, id=origin.o_id)
+
+    for sec in sections:
+
+        if (sec[0].startswith("===Etymology") and not sec[0].startswith("===Etymology===")) \
+                or (sec[0].startswith("===Verb") and not sec[0].startswith("===Verb===")):
+            # Therefore, if it starts with something like ===Etymology 1===
+            if def_id is None:
+                def_id = input("Multiple definitions detected. Enter an ID: ")
+        """
+        if sec[0].startswith("===Verb===") or sec[0].startswith(f"===Verb {def_id}"):
+            for subsec in helper.sections_by_level(sec, 4):
+                for node in sec[0].ifilter(recursive=False):
+                    if isinstance(node, mwp.wikicode.Template):
+
+                        pass# print("-"+repr(subsec))
+        """
+
+        if sec[0].startswith("===Etymology===") or sec[0].startswith(f"===Etymology {def_id}"):
+            if not ety_flag:
+                ety_flag = True
             else:
-                raise Exception("Unexpected h2 tag without a span: " + tag)
+                raise Exception("Etymology is being parsed twice? ")
+            # for node in sec[0].ifilter_templates(): #type: mwp.wikicode.Template
+            #     sec[0].remove(node)
 
-        # continue execution here
-        if tag.name == 'h3':
-            headl = tag.find_next('span', {"class": "mw-headline"})
-            if headl and headl['id'].startswith('Etymology'):  # parse etymology
-                for sib in tag.next_siblings:  # this should be the ety
-                    if sib.name == 'h3':  # break if we have reached the next language subsection
-                        if sib.find("span", {"class": "mw-headline"}):
-                            break
+            dotyet = False
+            firstsentence = []
+            for node in sec[0].ifilter(recursive=False):  # type: mwp.wikicode.Node
+                # .filter_templates(): #type: mwp.wikicode.Template
+                # if etytemp
+
+                if isinstance(node, mwp.wikicode.Template):
+                    etyr = pyetymology.etyobjects.EtyRelation(origin, node)
+                    # print(str(etyr))
+                    if not dotyet:
+                        firstsentence.append(etyr)
+
+                else:
+                    # print(str(node))
+                    if not dotyet:  # if we're in the first sentence
+                        if ("." in node):  # if we reach the end
+                            firstsentence.append(
+                                node[:node.index(".") + 1])  # get everything up to, and including, the period
+                            dotyet = True
                         else:
-                            raise Exception("Unexpected h3 tag without a span: " + sib)
-                    str = ''.join(all_text_linked(sib, amount="until_period"))
-                    # ancestry = str.split('.')[0]
-                    ancestry = list(links_only(sib, target="until_period"))
-                    continue # continue until we reach the next language subsection
-        if tag.name == 'h4':
-            headl = tag.find_next('span', {"class": "mw-headline"})
-            if headl and headl['id'].startswith('Descendants'):  # parse descendants
-                for sib in tag.next_siblings:  # this should be the descendants
-                    if sib.name == 'h3' or sib.name == 'h4':  # break if we reach a header
-                        if sib.find("span", {"class": "mw-headline"}):
-                            break
+                            firstsentence.append(
+                                node)  # if we haven't reached the period, we're in the middle. capture that node
+
+            print("1st sentence is " + repr(firstsentence))
+            ancestry = []
+
+            G = nx.DiGraph()
+            # prev = origin
+            prev = replacement_origin
+            # add_node(G, origin)
+            add_node(G, replacement_origin, colorize=replacement_origin is origin)
+            # if replacement_origin is not the origin, then that means that the origin was replaced
+            # by a preexisting node that was already colored
+            # therefore we should not colorize it
+
+            between_text = []
+
+            check_type = False
+            cache = langcode.cache.Cache(4)
+            for token in firstsentence:  # time to analyze the immediate etymology ("ancestry")
+                if token is None:
+                    continue
+                if isinstance(token, pyetymology.etyobjects.EtyRelation):
+                    token: pyetymology.etyobjects.EtyRelation
+                    cache.put(token)
+
+                    if any(helper.is_in(token.rtype, x) for x in
+                           (pyetymology.etyobjects.EtyRelation.ety_abbrs, pyetymology.etyobjects.EtyRelation.aff_abbrs,
+                            pyetymology.etyobjects.EtyRelation.sim_abbrs)):
+                        # inh, der, bor, m
+                        # print(between_text)
+                        if any("+" in s for s in
+                               between_text):  # or helper_api.is_in(token.rtype, helper_api.EtyRelation.aff_abbrs):
+                            prevs_parents = G.edges(nbunch=prev)  #
+                            # prev2 = cache.nth_prev(2)
+                            # print("parnt: " + str(parnt))
+                            parnt = next(iter(prevs_parents), (None, None))[1]
+                            # parnt = prev2
+                            add_node(G, token)
+                            G.add_edge(token, parnt)
+                            # print(cache.array)
+
+                            # sister node
                         else:
-                            raise Exception("Unexpected " + sib.name + " tag without a span: " + sib)
-                    str = ''.join(all_text_linked(sib, amount="full"))
-                    # ancestry = str.split('.')[0]
-                    progeny.extend(links_only(sib, target="full"))
-                    continue # continue until we break
-            if headl and headl['id'].startswith('Derived_terms'):  # parse derived terms
-                for sib in tag.next_siblings:  # this should be the descendants
-                    if sib.name == 'h3' or sib.name == 'h4':  # break if we reach a header
-                        if sib.find("span", {"class": "mw-headline"}):
-                            break
-                        else:
-                            raise Exception("Unexpected " + sib.name + " tag without a span: " + sib)
-                    # str = ''.join(all_text_linked(sib, amount="full"))
-                    progeny.extend(links_only(sib, target="full"))
-                    # print(progeny)
-                    continue # continue until we break
-                # Ancestry: get all links in first sentence
-    #print("ancestry: " + ", ".join(ancestry))
-    #print("progeny: " + ", ".join(progeny))
-    return ancestry, progeny
+                            add_node(G, token)
+                            if prev:
+                                G.add_edge(token, prev)
+                        prev = token
+                    else:
+                        print(token)
+                    between_text = []
+                else:
+                    between_text.append(token)
+
+            yield G
+        else:
+            pass  # print(repr(sec))
+    if not ety_flag and not lemma_flag:
+        raise Exception("Etymology not detected. (If a word has multiple definitions, you must specify it.)")

@@ -5,7 +5,7 @@ import grandalf as grandalf
 import requests
 import json
 
-from pyetymology import helper_api as helper, wikt_api_parser
+from pyetymology import helper as helper
 import pyetymology.langcode.cache
 
 import networkx as nx #rumored to be slow, but I'm just using it temporarily
@@ -21,7 +21,7 @@ import urllib.parse as urllib
 from pyetymology.etyobjects import Originator
 
 #https://iconscout.com/blog/15-classic-color-scheme-generators-to-pick-the-perfect-palette
-from pyetymology.helper_api import draw_graph
+from pyetymology.helper import draw_graph
 
 online = True
 

@@ -1,7 +1,7 @@
 import requests
 
 # Credits to Suyash Behera at https://pypi.org/project/wiktionaryparser/
-from pyetymology import helper
+from pyetymology import helper_old
 
 session = requests.Session()
 session.mount("http://", requests.adapters.HTTPAdapter(max_retries=2))  # retry up to 2 times
@@ -13,7 +13,7 @@ me = "llegar#Spanish"
 
 
 
-parents, children = helper.fetch(me, session)
+parents, children = helper_old.fetch(me, session)
 # parents is a list of parents in mostly hierarchical order, youngest to oldest
 
 prev = me
@@ -22,7 +22,7 @@ parents = list(reversed(parents))
 while len(parents) > 0:
     parent = parents.pop() # node's youngest parent
     relatives = parents
-    parent_parents, parent_children = helper.fetch(parent, session)
+    parent_parents, parent_children = helper_old.fetch(parent, session)
     if prev in parent_children:
         # fantastic!
         print("-Parent " + parent)
