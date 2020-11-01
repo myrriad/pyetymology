@@ -1,5 +1,6 @@
 import grandalf
 import mwparserfromhell as mwp
+from mwparserfromhell.wikicode import Wikicode
 
 import pyetymology.etyobjects
 from pyetymology import helper_api as helper
@@ -8,15 +9,16 @@ import pyetymology.langcode as langcode
 import matplotlib.pyplot as plt
 
 colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
-def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=None):
-
-    if replacement_origin is None:
-        replacement_origin = origin
-    res = mwp.parse(wikitext)
+def wikitextparse(wikitext):
+    res = mwp.parse(wikitext) #type: Wikicode
     # res = wtp.parse(wikitext)
 
     dom = res.get_sections()
-    # print(pprint(dom))
+    return res, dom
+"""
+Returns sections of only 1 lang
+"""
+def validate(dom, me, word, lang):
     if not lang or lang == "" or lang is None:
         # try to extract lang from dom
         found_langs = helper.all_lang_sections(dom)
@@ -28,13 +30,22 @@ def parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=Non
         if len(lang_options) == 1:
             lang = lang_options[0]
         else:
-            lang = input("Choose a lang from these options: " + str(lang_options))
+            while not lang or lang == "" or lang is None:
+                lang = input("Choose a lang from these options: " + str(lang_options))
 
-    dom = helper.sections_by_lang(dom, lang)
+    me = word + "#" + lang
+    lang_secs = helper.sections_by_lang(dom, lang)
 
     _exhausted = object()
-    if not dom or next(dom, _exhausted) == _exhausted:
+    if not lang_secs or next(lang_secs, _exhausted) == _exhausted:
         raise Exception(f"Word \"{word}\" has no entry under language {lang}")
+    return lang_secs, me, word, lang
+
+def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
+    me, word, lang, def_id = query
+    _, _, dom = wikiresponse # res, wikitext, dom
+    if replacement_origin is None:
+        replacement_origin = origin
 
     ety_flag = False
     lemma_flag = False

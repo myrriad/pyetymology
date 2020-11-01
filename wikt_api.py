@@ -1,3 +1,5 @@
+import warnings
+
 import grandalf as grandalf
 
 import requests
@@ -36,8 +38,9 @@ def query(me):
     def_id = None
     if len(terms) == 1:
         word = me
-        lang = input("Language not detected! Please input one: ")
-        me = word + "#" + lang
+        # lang = input("Language not detected! Please input one: ")
+        lang = ""
+        # me = word + "#" + lang
     elif len(terms) == 2:
         word, lang = terms
     elif len(terms) == 3:
@@ -69,11 +72,23 @@ def query(me):
     else:
         raise Exception("Response malformed!" + str(jsn))
     # print(wikitext)
-    origin = Originator(me)
-    return wikitext, origin, word, lang, def_id, src, word_urlify
-def graph(wikitext, origin, word, lang, def_id, src, word_urlify, replacement_origin=None):
+
+    res, dom = wikt_api_parser.wikitextparse(wikitext)
+    # Here was the lang detection
+
+    dom, me, word, lang = wikt_api_parser.validate(dom, me, word, lang)
+    assert me
+    assert word
+    assert lang
+    assert len(me.split("#")) >= 2
+
+    query = (me, word, lang, def_id)
+    wikiresponse = (res, wikitext, dom)
+    origin = Originator(me) # TODO: origin must be equipped with a me that contains a lang. That means that lang needs to be known at query time, which it currently is known at parse time.
+    return query, wikiresponse, origin, src, word_urlify
+def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
     try:
-        G = list(iter(wikt_api_parser.parse_and_graph(wikitext, origin, word, lang, def_id, replacement_origin=replacement_origin)))
+        G = list(iter(wikt_api_parser.parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)))
     except Exception as e:
         print(src)
         print(f"https://en.wiktionary.org/wiki/{word_urlify}")
@@ -91,7 +106,7 @@ GG, origin = graph(*query(original_query))
 draw_graph(GG, origin)
 while(not original_query): # if original query is "", then keep repeating it
     _query = query(original_query) # parse the query
-    query_origin = _query[1] # extract from origin of query from  variable scope dump
+    _, _, query_origin, _, _ = _query # extract from origin of query from variable scope dump
     GG_origin = helper.contains_originator(GG, query_origin)
     # We want to connect these two graphs,
     # so we take our query's origin and try to find
@@ -101,12 +116,14 @@ while(not original_query): # if original query is "", then keep repeating it
     draw_graph(G, origin)
 
     if GG_origin:
-        pass # good, we found a connection
+        # good, we found a connection
+        # fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
+        GG2 = nx.compose(GG, G)
     else:
-        raise Exception("Unconnected query " + str(GG_origin))
+        warnings.warn("Unconnected query " + str(origin))
+        GG2 = G
 
-    #fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
-    GG2 = nx.compose(GG, G)
+
 
     """
     # connect G to GG
