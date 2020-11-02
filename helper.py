@@ -4,11 +4,13 @@ from mwparserfromhell.wikicode import Wikicode
 
 import grandalf.utils as grutils
 import networkx as nx
+
+import matplotlib
+# matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
 
-
 import pyetymology.etyobjects
-from pyetymology import helper as helper
+from pyetymology import helper as helper, simple_sugi
 import pyetymology.langcode as langcode
 
 ### START helper_api.py
@@ -83,20 +85,23 @@ def all_lang_sections(sections: List[Wikicode], recursive=False) -> Generator[Wi
     return sections_by_level(sections, 2, recursive)
 
 
-def draw_graph(G, origin):
+def draw_graph(G, origin, simple=False):
     print("...drawing graph...")
 
-    g = grutils.convert_nextworkx_graph_to_grandalf(G)
-    from grandalf.layouts import SugiyamaLayout
+    if simple:
+        poses = simple_sugi.pos(G)
+    else:
+        g = grutils.convert_nextworkx_graph_to_grandalf(G)
+        from grandalf.layouts import SugiyamaLayout
 
-    class DefaultView(object):
-        w, h = 10, 10
+        class DefaultView(object):
+            w, h = 10, 10
 
-    for v in g.V(): v.view = DefaultView()
-    sug = SugiyamaLayout(g.C[0])
-    sug.init_all()  # roots=[V[0]]) #, inverted_edges=[V[4].e_to(V[0])])
-    sug.draw()
-    poses = {v.data: (-v.view.xy[0], -v.view.xy[1]) for v in g.C[0].sV}
+        for v in g.V(): v.view = DefaultView()
+        sug = SugiyamaLayout(g.C[0])
+        sug.init_all()  # roots=[V[0]]) #, inverted_edges=[V[4].e_to(V[0])])
+        sug.draw()
+        poses = {v.data: (-v.view.xy[0], -v.view.xy[1]) for v in g.C[0].sV}
 
     node_colors = nx.get_node_attributes(G, 'color')
     nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
@@ -178,13 +183,13 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
     lemma_flag = False
     sections = helper.sections_by_level(dom, 3)
 
-    def add_node(G, node, colorize=True):
-        if colorize:
+    def add_node(G, node, color_id=None):
+        if color_id is None:
             global colors
             color = colors[origin.o_id]
-            G.add_node(node, id=origin.o_id, color=color)
         else:
-            G.add_node(node, id=origin.o_id)
+            color = colors[color_id]
+        G.add_node(node, id=origin.o_id, color=color)
 
     for sec in sections:
 
@@ -193,6 +198,8 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
             # Therefore, if it starts with something like ===Etymology 1===
             if def_id is None:
                 def_id = input("Multiple definitions detected. Enter an ID: ")
+                if def_id == "":
+                    def_id = 1
         """
         if sec[0].startswith("===Verb===") or sec[0].startswith(f"===Verb {def_id}"):
             for subsec in helper.sections_by_level(sec, 4):
@@ -242,8 +249,11 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
             prev = replacement_origin
 
 
+            # print("test")
+
             # add_node(G, origin)
-            add_node(G, replacement_origin, colorize=replacement_origin is origin)
+
+            add_node(G, replacement_origin, color_id=replacement_origin.color_id if replacement_origin else None)
             # if replacement_origin is not the origin, then that means that the origin was replaced
             # by a preexisting node that was already colored
             # therefore we should not colorize it
@@ -280,7 +290,8 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
                             add_node(G, token)
                             if prev:
                                 G.add_edge(token, prev)
-                        if not helper.is_in(token.rtype, EtyRelation.sim_abbrs): # if it's an etymological or affixal relation, but NOT a mention
+                        if not helper.is_in(token.rtype,
+                                            EtyRelation.sim_abbrs):  # if it's an etymological or affixal relation, but NOT a mention
                             prev = token
                     else:
                         print(token)

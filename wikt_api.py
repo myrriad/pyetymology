@@ -12,8 +12,6 @@ import networkx as nx #rumored to be slow, but I'm just using it temporarily
 
 import pickle
 
-import matplotlib.pyplot as plt
-
 import urllib.parse as urllib
 
 
@@ -106,6 +104,7 @@ GG, origin = graph(*query(original_query))
 draw_graph(GG, origin)
 _ = [print(x) for x in GG.nodes]
 while(not original_query): # if original query is "", then keep repeating it
+    assert True
     _query = query(original_query) # parse the query
     _, _, query_origin, _, _ = _query # extract from origin of query from variable scope dump
     GG_origin = helper.contains_originator(GG, query_origin)

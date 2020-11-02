@@ -26,6 +26,11 @@ class Originator:
         return self.me + "$" + str(self.o_id)
 
 
+    @property
+    def color_id(self):
+        return self.o_id
+
+
 class EtyRelation:
     ety_abbrs = {"derived": "der",
                  "inherited": "inh",
@@ -132,3 +137,7 @@ class EtyRelation:
 
     def __bool__(self):
         return not self.null
+
+    @property
+    def color_id(self):
+        return self.origin.o_id
