@@ -1,8 +1,7 @@
 import warnings
 
 
-from pyetymology import wikt_api as helper
-from pyetymology import wikt_api as api
+from pyetymology import wikt_api as ety
 import networkx as nx #rumored to be slow, but I'm just using it temporarily
 
 
@@ -18,23 +17,19 @@ online = True
 original_query = "" #lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#Spanish"#"Reconstruction:Proto-Italic/feiljos#"
 
 
-
-
-
-
-GG, origin = api.graph(*api.query(original_query))
+GG, origin = ety.graph(*ety.query(original_query))
 draw_graph(GG, origin)
 _ = [print(x) for x in GG.nodes]
-while(not original_query): # if original query is "", then keep repeating it
+while not original_query: # if original query is "", then keep repeating it
     assert True
-    _query = api.query(original_query) # parse the query
+    _query = ety.query(original_query) # parse the query
     _, _, query_origin, _, _ = _query # extract from origin of query from variable scope dump
-    GG_origin = helper.contains_originator(GG, query_origin)
+    GG_origin = ety.contains_originator(GG, query_origin)
     # We want to connect these two graphs,
     # so we take our query's origin and try to find
     # a node from our big, working tree GG.
 
-    G, origin = api.graph(*_query, replacement_origin=GG_origin)
+    G, origin = ety.graph(*_query, replacement_origin=GG_origin)
     draw_graph(G, origin)
 
     if GG_origin:
@@ -46,11 +41,9 @@ while(not original_query): # if original query is "", then keep repeating it
         GG = G
         continue
 
-
-
     """
     # connect G to GG
-    common_link = helper.contains_originator(GG, origin)
+    common_link = ety.contains_originator(GG, origin)
     GG2 = nx.compose(GG, G)
     if common_link:
         GG2.add_edge(origin, common_link)
