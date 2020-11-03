@@ -1,5 +1,6 @@
 import json
 import pickle
+import string
 import urllib
 
 import grandalf
@@ -74,7 +75,7 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True) -> G
     yield builder
 
 
-def sections_by_lang(sections: List[Wikicode], lang) -> Generator[Wikicode, None, None]:
+def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikicode, None, None]:
     in_section = False
     for sec in sections:
 
@@ -158,7 +159,7 @@ Returns sections of only 1 lang
 """
 
 
-def validate(dom, me, word, lang):
+def auto_lang(dom, me, word, lang):
     if not lang or lang == "" or lang is None:
         # try to extract lang from dom
         found_langs = all_lang_sections(dom)
@@ -176,10 +177,9 @@ def validate(dom, me, word, lang):
                 lang = input("Choose a lang from these options: " + str(lang_options))
 
     me = word + "#" + lang
-    lang_secs = sections_by_lang(dom, lang)
+    lang_secs = list(sections_by_lang(dom, lang))
 
-    _exhausted = object()
-    if not lang_secs or next(lang_secs, _exhausted) == _exhausted:
+    if not lang_secs:
         raise Exception(f"Word \"{word}\" has no entry under language {lang}")
     return lang_secs, me, word, lang
 
@@ -344,10 +344,10 @@ def query(me):
         res = session.get(src)
 
         #cache res
-        with open('pyetymology/response.pkl', 'wb') as output:
+        with open('response.pkl', 'wb') as output:
             pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
     else:
-        with open('pyetymology/response.pkl', 'rb') as _input:
+        with open('response.pkl', 'rb') as _input:
             res = pickle.load(_input)
 
     txt = res.text
@@ -365,7 +365,7 @@ def query(me):
     res, dom = wikitextparse(wikitext)
     # Here was the lang detection
 
-    dom, me, word, lang = validate(dom, me, word, lang)
+    dom, me, word, lang = auto_lang(dom, me, word, lang)
     assert me
     assert word
     assert lang
