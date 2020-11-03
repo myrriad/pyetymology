@@ -15,7 +15,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import pyetymology.etyobjects
-from pyetymology import wikt_api as helper, simple_sugi, main
+from pyetymology import simple_sugi
 import pyetymology.langcode as langcode
 
 ### START helper_api.py
@@ -26,6 +26,7 @@ import mwparserfromhell
 
 from pyetymology.etyobjects import EtyRelation, Originator
 
+online = True
 
 session = requests.Session()
 session.mount("http://", requests.adapters.HTTPAdapter(max_retries=2))  # retry up to 2 times
@@ -91,7 +92,7 @@ def sections_by_lang(sections: List[Wikicode], lang) -> Generator[Wikicode, None
             break
 
 
-def all_lang_sections(sections: List[Wikicode], recursive=False) -> Generator[Wikicode, None, None]:
+def all_lang_sections(sections: List[Wikicode], recursive=False) -> Generator[List[Wikicode], None, None]:
     return sections_by_level(sections, 2, recursive)
 
 
@@ -160,7 +161,7 @@ Returns sections of only 1 lang
 def validate(dom, me, word, lang):
     if not lang or lang == "" or lang is None:
         # try to extract lang from dom
-        found_langs = helper.all_lang_sections(dom)
+        found_langs = all_lang_sections(dom)
 
         def _compr(found_langs):
             for found_lang in found_langs:
@@ -175,7 +176,7 @@ def validate(dom, me, word, lang):
                 lang = input("Choose a lang from these options: " + str(lang_options))
 
     me = word + "#" + lang
-    lang_secs = helper.sections_by_lang(dom, lang)
+    lang_secs = sections_by_lang(dom, lang)
 
     _exhausted = object()
     if not lang_secs or next(lang_secs, _exhausted) == _exhausted:
@@ -191,7 +192,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
 
     ety_flag = False
     lemma_flag = False
-    sections = helper.sections_by_level(dom, 3)
+    sections = sections_by_level(dom, 3)
 
     def add_node(G, node, color_id=None):
         if color_id is None:
@@ -279,7 +280,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
                     token: EtyRelation
                     cache.put(token)
 
-                    if any(helper.is_in(token.rtype, x) for x in
+                    if any(is_in(token.rtype, x) for x in
                            (EtyRelation.ety_abbrs, EtyRelation.aff_abbrs,
                             EtyRelation.sim_abbrs)):
                         # inh, der, bor, m
@@ -300,7 +301,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
                             add_node(G, token)
                             if prev:
                                 G.add_edge(token, prev)
-                        if not helper.is_in(token.rtype,
+                        if not is_in(token.rtype,
                                             EtyRelation.sim_abbrs):  # if it's an etymological or affixal relation, but NOT a mention
                             prev = token
                     else:
@@ -337,7 +338,7 @@ def query(me):
     word_urlify = urllib.parse.quote_plus(word)
     src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
     # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
-    online = main.online
+
     if online:
         global session
         res = session.get(src)
@@ -361,10 +362,10 @@ def query(me):
         raise Exception("Response malformed!" + str(jsn))
     # print(wikitext)
 
-    res, dom = helper.wikitextparse(wikitext)
+    res, dom = wikitextparse(wikitext)
     # Here was the lang detection
 
-    dom, me, word, lang = helper.validate(dom, me, word, lang)
+    dom, me, word, lang = validate(dom, me, word, lang)
     assert me
     assert word
     assert lang
@@ -376,7 +377,7 @@ def query(me):
     return query, wikiresponse, origin, src, word_urlify
 def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
     try:
-        G = list(iter(helper.parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)))
+        G = list(iter(parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)))
     except Exception as e:
         print(src)
         print(f"https://en.wiktionary.org/wiki/{word_urlify}")

@@ -8,9 +8,8 @@ import networkx as nx #rumored to be slow, but I'm just using it temporarily
 from pyetymology.etyobjects import Originator
 
 #https://iconscout.com/blog/15-classic-color-scheme-generators-to-pick-the-perfect-palette
-from pyetymology.wikt_api import draw_graph
 
-online = True
+# online = True
 
 
 
@@ -18,7 +17,7 @@ original_query = "" #lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#S
 
 
 GG, origin = ety.graph(*ety.query(original_query))
-draw_graph(GG, origin)
+ety.draw_graph(GG, origin)
 _ = [print(x) for x in GG.nodes]
 while not original_query: # if original query is "", then keep repeating it
     assert True
@@ -30,7 +29,7 @@ while not original_query: # if original query is "", then keep repeating it
     # a node from our big, working tree GG.
 
     G, origin = ety.graph(*_query, replacement_origin=GG_origin)
-    draw_graph(G, origin)
+    ety.draw_graph(G, origin)
 
     if GG_origin:
         # good, we found a connection
@@ -51,7 +50,7 @@ while not original_query: # if original query is "", then keep repeating it
         raise Exception("Unconnected query " + origin)
     """
     _ = [print(x) for x in GG.nodes]
-    draw_graph(GG2, origin)
+    ety.draw_graph(GG2, origin)
     GG = GG2
 
 
