@@ -64,9 +64,9 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat
 
         if has_exact_prefix(sec, prefix):  # we've reached the next header
             if in_section:
-                yield yieldme(builder) # if we're already in section, that means we've done this before, and yield the builder
+                yield yieldme(builder) # if we're already in section, that means yield previous work
             else:
-                in_section = True # don't yield if we're just starting out
+                in_section = True # don't yield if we're just starting out, as it will be empty
 
             if antiredundance: # if we're antiredundance,
                 # substring our string to cut out the children, which automatically come packaged with the parent
@@ -107,8 +107,8 @@ def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikico
             break
 
 
-def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> Generator[List[Wikicode], None, None]:
-    return sections_by_level(sections, 2, recursive, flat)
+def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True, antiredundance=False) -> Generator[List[Wikicode], None, None]:
+    return sections_by_level(sections, 2, recursive, flat, antiredundance)
 
 
 def draw_graph(G, origin, simple=False):

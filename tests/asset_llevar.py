@@ -1,0 +1,121 @@
+catalan_txt = """==Catalan==
+
+===Etymology===
+From {{inh|ca|la|levāre}}, present active infinitive of {{m|la|levō}}.
+
+===Pronunciation===
+* {{ca-IPA}}
+
+===Verb===
+{{ca-verb}}
+
+# to [[remove]], to [[take out]]
+
+====Conjugation====
+{{ca-conj-ar|llev}}
+
+====Derived terms====
+* {{l|ca|llevaneu}}
+* {{l|ca|llevar-se}}
+
+===Further reading===
+* {{R:IEC2}}
+* {{R:GDLC}}
+* {{R:DNV}}
+* {{R:DCVB}}
+
+----
+
+"""
+
+spanish_txt = """==Spanish==
+
+===Etymology===
+From {{inh|es|osp|levar}}, from {{inh|es|la|levāre}}, present active infinitive of {{m|la|levō}}. The shift of an initial 'l' to 'll' is not normal, but is explained by the fact that in Medieval/Old Spanish, the third-person present indicative was {{m|osp|lieva}}, which was then altered into {{m|es|lleva}}; eventually this was extended to the entire verb.<ref>https://www.scribd.com/document/158436236/Diccionario-Critico-Etimologico-castellano-G-MA-Corominas-Joan-pdf</ref>
+
+===Pronunciation===
+* {{IPA|es|[ɟe̞ˈβäɾ]|[ʎe̞ˈβäɾ]}}
+* {{a|Rioplatense}} {{IPA|es|[ʒe̞ˈβäɾ]|[ʃe̞ˈβäɾ]}}
+* {{es-IPA}}
+
+===Verb===
+{{es-verb|llev|ar}}
+
+# {{lb|es|transitive}} to [[take]], to [[carry]], to [[take away]], to [[carry away]], to [[carry]] [[around]], to [[bring]], to [[bear]], to [[lug]] (implies to move something further from who speaks)
+#: {{ux|es|Le '''llevaré''' un regalo a Rosa para su cumpleaños.|I will '''take''' a present to Rosa for her birthday.}}
+#: {{syn|es|quitar}}
+#: {{ant|es|traer}}
+# {{lb|es|transitive}} to [[take]], to [[take out]] (implies moving someone further from the speaker)
+#: {{ux|es|'''Llevamos''' a las chicas al cine.|'''We're taking''' the girls to the movies.}}
+# {{indtr|es|a|intr=1}} to [[lead]], to [[lead]] [[to]], to [[drive]], to [[drive]] to
+#: {{ux|es|A la luz de esos resultados, todo esto '''lleva''' a la conclusión de que hay que idear métodos alternativos.|In light of those findings, all this '''leads''' to the conclusion that alternative methods should be devised.}}
+# {{lb|es|transitive|with gerund}} to have [[spend time|spent time]], have been
+#: {{uxi|es|'''Llevo''' seis años aquí.|'''I've been''' here 6 years.}}
+#: {{ux|es|'''Llevo''' dos años estudiando francés.|'''I've been''' studying French for two years.}}
+#: {{ux|es|'''Llevamos''' más de 30 años casados.|'''We've been''' married for more than 30 years.}}
+# {{lb|es|transitive}} to [[wear]] (short for the more formal ''llevar'' {{m|es|puesto}})
+#: {{ux|es|Ella '''llevaba''' una blusa rosa|She '''was wearing''' a pink blouse.}}
+#: {{syn|es|traer|q1=short form of traer puesto}}
+# {{lb|es|transitive}} to [[have]], [[include]] (have as a component, part, accessory or ingredient)
+#: {{ux|es|Si es quesadilla '''lleva''' queso, si no lleva queso, no es quesadilla.|If it is a quesadilla, '''it has''' cheese; if it does not have cheese it is not a quesadilla.|footer=(phrase used in the Mexican provinces to debate the usage of the word ''quesadilla'' in Mexico City)}}
+#: {{ux|es|Esta palabra no '''lleva''' acento.|This word does not '''have''' an accent mark.}}
+#: {{syn|es|traer}}
+# {{lb|es|transitive}}  to give a lift, to give a ride
+# {{lb|es|colloquial}} to [[hold up]], to be [[doing]], to [[cope]]
+#: {{uxi|es|¿Cómo lo '''llevas'''?|How are you '''holding up'''?}}
+
+====Usage notes====
+* Since in the sense of "carry" or "move" (things, persons) '''llevar''' and ''traer'' indicate direction, from or to a certain place, both verbs are antonyms in the origin and destination, but between them they are used as synonyms.
+
+====Conjugation====
+{{es-conj-ar|llev|combined=1}}
+
+====Derived terms====
+{{der2|es|
+{{l|es|llevar a efecto}}
+|{{l|es|llevar a gala}}
+|{{l|es|llevar adelante}}
+|{{l|es|llevar a caballito||to give a piggyback ride, to carry on one's back}}
+|{{l|es|llevar al huerto}}
+|{{l|es|llevar el gato al agua||to achieve or overcome the impossible or improbable}}
+|llevar el paso
+|{{l|es|llevar los pantalones}}
+|{{l|es|llevarse a la boca}}
+|{{l|es|llevar a término||to bring to completion, bring to a close, bring to a conclusion}}
+|{{l|es|llevarse la palma}}
+|{{l|es|llevar al extremo||to take to the extreme}}
+|{{l|es|llevar al límite||to push to the limit, to push or take over the edge}}
+|{{l|es|llevar a pensar||to lead somebody to think}}
+|{{l|es|llevarse por delante}}
+|{{l|es|llevarse de vuelta a||to take you back to; to bring you back to [a memorable time or place]}}
+|{{l|es|llevarse}}
+|llevarse como el perro y el gato
+|llevar puesto
+|{{l|es|llevar a cabo}}
+|{{l|es|llevar al altar||to walk down the aisle, to bring to the altar}}
+|{{l|es|llevarse bien||to get along}}
+|{{l|es|llevar la contraria}}
+|{{l|es|para llevar||takeout, carry-out, take-away}} {{q|adj}}
+|{{l|es|llevar la cuenta||to keep track, to keep score, to keep count}}
+|{{l|es|dejarse llevar||to get carried away, to let oneself go}}
+|{{l|es|dejarse llevar por||to be swayed by, to be led by}}
+|{{l|es|llevar a casa||to give somebody a lift or ride home}}
+|{{l|es|llevar a los tribunales}}, {{l|es|llevar a juicio||to take to court}}
+}}
+
+====Related terms====
+* {{l|es|leudo}}
+* {{l|es|levadura}}
+* {{l|es|levantar}}
+* {{l|es|liviano}}
+
+====See also====
+* [[acarrear]]
+* [[arrastrar]]
+* [[cargar]]
+* [[desplazar]]
+* [[mover]]
+* {{l|es|portar}}
+
+===References===
+<references/>"""

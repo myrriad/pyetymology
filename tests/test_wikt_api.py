@@ -3,7 +3,7 @@ from unittest import TestCase
 import pytest
 
 from pyetymology import wikt_api as wx
-from pyetymology.tests import assets
+from pyetymology.tests import assets, asset_llevar
 
 
 def fetch_wikitext(topic):
@@ -69,7 +69,7 @@ class TestAdelante:
 
 class TestLlevar:
     # https://en.wiktionary.org/wiki/llevar
-    def test_lang_detect(self, monkeypatch):
+    def test_all_lang_sections(self, monkeypatch):
         monkeypatch.setattr('builtins.input', lambda _: "dummy_input")
 
         res, dom = fetch_resdom("llevar")
@@ -77,19 +77,43 @@ class TestLlevar:
         assert len(sections) == 2
         catalan = sections[0][0]
         spanish = sections[1][0]
-        assert str(catalan).startswith("==Catalan==")
-        assert str(spanish).startswith("==Spanish==")
+
+        catalantxt = asset_llevar.catalan_txt
+        spanishtxt = asset_llevar.spanish_txt
+
+        assert str(catalan) == catalantxt
+        assert str(spanish) == spanishtxt
+
+        sections = list(wx.all_lang_sections(dom, flat=True)) #type: List[List[Wikicode]]
+        assert len(sections) == 2
+        catalan = sections[0]
+        spanish = sections[1]
+        assert str(catalan) == catalantxt
+        assert str(spanish) == spanishtxt
+
+        sections = list(wx.all_lang_sections(dom, antiredundance=True)) #type: List[List[Wikicode]]
+        assert len(sections) == 2
+        catalan = sections[0]
+        spanish = sections[1]
+        assert str(catalan) == '==Catalan==\n\n'
+        assert str(spanish) == '==Spanish==\n\n'
 
     def test_section_detect(self):
         res, dom = fetch_resdom("llevar")
         secs = list(wx.sections_by_level(dom, 3))
         assert secs == [['===Etymology===\nFrom {{inh|ca|la|levāre}}, present active infinitive of {{m|la|levō}}.\n\n'], ['===Pronunciation===\n* {{ca-IPA}}\n\n'], ['===Verb===\n{{ca-verb}}\n\n# to [[remove]], to [[take out]]\n\n====Conjugation====\n{{ca-conj-ar|llev}}\n\n====Derived terms====\n* {{l|ca|llevaneu}}\n* {{l|ca|llevar-se}}\n\n', '====Conjugation====\n{{ca-conj-ar|llev}}\n\n', '====Derived terms====\n* {{l|ca|llevaneu}}\n* {{l|ca|llevar-se}}\n\n'], ['===Further reading===\n* {{R:IEC2}}\n* {{R:GDLC}}\n* {{R:DNV}}\n* {{R:DCVB}}\n\n----\n\n']]
     def test_auto_lang(self, monkeypatch):
-        res, dom = fetch_resdom("adelante")
-        monkeypatch.setattr('builtins.input', lambda _: "dummy_input")
+        res, dom = fetch_resdom("llevar")
+        monkeypatch.setattr('builtins.input', lambda _: "Spanish")
 
         v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
             (list2 := (list(wx.sections_by_lang(dom, "Spanish")), "arbitrary#Spanish", "arbitrary", "Spanish"))
+        assert v
+
+        monkeypatch.setattr('builtins.input', lambda _: "Catalan")
+
+        v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
+            (list2 := (list(wx.sections_by_lang(dom, "Catalan")), "arbitrary#Catalan", "arbitrary", "Catalan"))
         assert v
 
 
