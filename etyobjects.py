@@ -35,8 +35,11 @@ class Affixal:
         self.template = template
         if rtype == "pre":
             self.root = params[2]
-        if rtype == "suf":
+        elif rtype == "suf":
             self.root = params[1]
+        # elif rtype == "con":
+        else:
+            self.root = ""
             # TODO: Everything
 
 
@@ -89,6 +92,7 @@ class EtyRelation:
             rtype = sim_abbrs[rtype]
 
         self.null = False
+        self.affixal = None
         if rtype in ety_abbrs.values():  # if it's an etymological relation
             _selflang = str(params[0])
             lang = str(params[1])

@@ -200,7 +200,7 @@ def auto_lang(dom, me, word, lang):
     return lang_secs, me, word, lang
 
 
-def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
+def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_mentions_sideways=False):
     me, word, lang, def_id = query
     _, _, dom = wikiresponse  # res, wikitext, dom
     if replacement_origin is None:
@@ -259,7 +259,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
                 else:
                     # print(str(node))
                     if not dotyet:  # if we're in the first sentence
-                        if ("." in node):  # if we reach the end
+                        if isinstance(node, mwparserfromhell.wikicode.Text) and "." in node:  # if we reach the end
                             firstsentence.append(
                                 node[:node.index(".") + 1])  # get everything up to, and including, the period
                             dotyet = True
@@ -317,8 +317,9 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
                             add_node(G, token)
                             if prev:
                                 G.add_edge(token, prev)
-                        if not is_in(token.rtype,
-                                            EtyRelation.sim_abbrs):  # if it's an etymological or affixal relation, but NOT a mention
+                        if make_mentions_sideways and is_in(token.rtype, EtyRelation.sim_abbrs):
+                            pass # if a mention
+                        else:
                             prev = token
                     else:
                         print(token)

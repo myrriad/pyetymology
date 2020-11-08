@@ -1,0 +1,5 @@
+===Etymology===
+[[File:Flplpuls.jpg|thumb|A prototype ''(sense 2)'' of a “lift system” or flying machine for an individual person]]
+
+From {{der|en|fr|prototype}} or {{der|en|LL.|prototypon}},<ref>{{R:Oxford English Dictionary|entry=Prototype|volume=VII|page=1512|column=2}}</ref> from {{der|en|grc|πρωτότυπος||original; prototype}},<ref>{{R:Lexico}}</ref> from {{m|grc|πρωτο-||''prefix meaning ‘first’''}} (from {{m|grc|πρῶτος||first; earliest}}) + {{m|grc|τῠ́πος||blow, pressing; sort, type}} (from {{m|grc|τύπτω||to beat, strike}}, from {{der|en|ine-pro|*(s)tewp-||to push; to stick}}). The word is analysable as {{confix|en|proto|type}}.
+
