@@ -46,7 +46,7 @@ If there is a subheader, it will be packaged after the specified main header tha
 """
 
 
-def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[List[Wikicode], None, None]:
+def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False, antiredundance=False) -> Generator[List[Wikicode], None, None]:
 
 
     in_section = False
@@ -62,25 +62,31 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat
             return builder
     for sec in sections:
 
-        if not in_section:
-            if has_exact_prefix(sec, prefix):  # we've reached the desired section
-                # print(repr(sec))
-                in_section = True
-                builder.append(sec)
-                continue
+        if has_exact_prefix(sec, prefix):  # we've reached the next header
+            if in_section:
+                yield yieldme(builder) # if we're already in section, that means we've done this before, and yield the builder
+            else:
+                in_section = True # don't yield if we're just starting out
+
+            if antiredundance: # if we're antiredundance,
+                # substring our string to cut out the children, which automatically come packaged with the parent
+                try:
+                    added = sec[:str(sec).index(childprefix)]
+                except ValueError:
+                    added = sec
+            else:
+                added = sec
+            builder = [added]  # start building
             continue
-        if sec.startswith(childprefix):  # if it's a child
-            # print(repr(sec))
+        if not in_section: # skip everything until we get to our first header
+            continue
+        if sec.startswith(childprefix):  # if it's a child (this will be skipped until we actually get in to the first section.)
             if recursive:
                 builder.append(sec)
             continue
-        if has_exact_prefix(sec, prefix):  # we've reached the next header
-            yield yieldme(builder)  # yield it
-            builder = [sec]  # start building again
-            continue
-        # if it's neither a child nor a sibling, therefore it's a parent
-        break
-    yield yieldme(builder)
+        break # we're in section, but it's neither a child nor a sibling, therefore it's a parent and we should exit.
+
+    yield yieldme(builder) # yield stragglers
 
 
 def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikicode, None, None]:
