@@ -29,6 +29,15 @@ class Originator:
     @property
     def color_id(self):
         return self.o_id
+class Affixal:
+    def __init__(self, template: mwparserfromhell.wikicode.Template, rtype: string):
+        params = template.params
+        self.template = template
+        if rtype == "pre":
+            self.root = params[2]
+        if rtype == "suf":
+            self.root = params[1]
+            # TODO: Everything
 
 
 class EtyRelation:
@@ -86,14 +95,17 @@ class EtyRelation:
             word = str(params[2])
 
 
-        elif rtype in cog_abbrs.values() \
-                or rtype in aff_abbrs.values() \
-                or rtype in sim_abbrs.values():
+        elif rtype in cog_abbrs.values() or rtype in sim_abbrs.values():
             # if it's a cognate relation
             # or affix, prefix, suffix, etc.
             # or mention
             lang = str(params[0])
             word = str(params[1])
+        elif rtype in aff_abbrs.values(): # this is really complicated
+            lang = str(params[0])
+            # word = str(params[1])
+            self.affixal = Affixal(template, rtype)
+            word = self.affixal.root
         else:
             self.null = True  # if it's none that are recognized, mark self as null
 
@@ -123,8 +135,10 @@ class EtyRelation:
             return self.word == word and self.langname == lang
 
     def __str__(self):
-        if (not self):
+        if not self:
             return "{{" + self.rtype + " null " + repr(self.params) + "}}"
+        if self.affixal:
+            return str(self.affixal.template)
         assert self.word is not None
         assert self.langname is not None
         paramsc = repr(self.params[3:])  # slice off the first 3 args

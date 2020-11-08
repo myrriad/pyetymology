@@ -8,6 +8,7 @@ import mwparserfromhell as mwp
 import requests
 from mwparserfromhell.wikicode import Wikicode
 
+from pyetymology.langcode.cache import Cache
 import grandalf.utils as grutils
 import networkx as nx
 
@@ -287,7 +288,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None):
             between_text = []
 
             check_type = False
-            cache = langcode.cache.Cache(4)
+            cache = Cache(4)
             for token in firstsentence:  # time to analyze the immediate etymology ("ancestry")
                 if token is None:
                     continue
