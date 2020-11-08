@@ -46,11 +46,20 @@ If there is a subheader, it will be packaged after the specified main header tha
 """
 
 
-def sections_by_level(sections: List[Wikicode], level: int, recursive=True) -> Generator[List[Wikicode], None, None]:
+def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[List[Wikicode], None, None]:
+
+
     in_section = False
     prefix = "=" * level
     childprefix = prefix + "="
     builder = []
+
+    def yieldme(builder):
+        if not recursive and flat:
+            assert len(builder) == 1
+            return builder[0]
+        else:
+            return builder
     for sec in sections:
 
         if not in_section:
@@ -66,13 +75,12 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True) -> G
                 builder.append(sec)
             continue
         if has_exact_prefix(sec, prefix):  # we've reached the next header
-            yield builder  # yield it
-            builder = []  # start building again
-            builder.append(sec)
+            yield yieldme(builder)  # yield it
+            builder = [sec]  # start building again
             continue
         # if it's neither a child nor a sibling, therefore it's a parent
         break
-    yield builder
+    yield yieldme(builder)
 
 
 def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikicode, None, None]:
@@ -93,8 +101,8 @@ def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikico
             break
 
 
-def all_lang_sections(sections: List[Wikicode], recursive=False) -> Generator[List[Wikicode], None, None]:
-    return sections_by_level(sections, 2, recursive)
+def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> Generator[List[Wikicode], None, None]:
+    return sections_by_level(sections, 2, recursive, flat)
 
 
 def draw_graph(G, origin, simple=False):
@@ -151,6 +159,7 @@ def wikitextparse(wikitext):
     # res = wtp.parse(wikitext)
 
     dom = res.get_sections()
+
     return res, dom
 
 
@@ -162,11 +171,11 @@ Returns sections of only 1 lang
 def auto_lang(dom, me, word, lang):
     if not lang or lang == "" or lang is None:
         # try to extract lang from dom
-        found_langs = all_lang_sections(dom)
+        found_langs = all_lang_sections(dom, flat=True)
 
         def _compr(found_langs):
             for found_lang in found_langs:
-                h = found_lang[0][2:]  # found_lang should be array of length 1, because recursive is false
+                h = found_lang[2:]  # EDIT: with flat=True, disregard the following. found_lang should be array of length 1, because recursive is false
                 yield h[:h.index("==")]
 
         lang_options = list(_compr(found_langs))
@@ -373,7 +382,7 @@ def query(me):
 
     query = (me, word, lang, def_id)
     wikiresponse = (res, wikitext, dom)
-    origin = Originator(me) # TODO: origin must be equipped with a me that contains a lang. That means that lang needs to be known at query time, which it currently is known at parse time.
+    origin = Originator(me)
     return query, wikiresponse, origin, src, word_urlify
 def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
     try:

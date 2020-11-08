@@ -1,0 +1,49 @@
+{{also|adelanté}}
+==Spanish==
+
+===Pronunciation===
+* {{es-IPA}}
+* {{hyph|es|a|de|lan|te}}
+
+===Etymology 1===
+From {{m|es|delante||in front}}.
+
+====Adverb====
+{{es-adv}}
+
+# [[forward]] {{gloss|toward the front}}
+# [[forward]] {{gloss|into the future}}
+
+=====Alternative forms=====
+* {{l|es|alante}} {{q|colloquial}}
+
+====Derived terms====
+{{der3|es
+|adelantar
+|de aquí en adelante
+|en adelante
+|Gran Salto Adelante
+|llevar adelante
+|más adelante
+|sacar adelante
+|salir adelante
+|seguir adelante}}
+
+====Interjection====
+{{head|es|interjection}}
+
+# [[come in]]
+# [[go ahead]]
+
+===Etymology 2===
+{{nonlemma}}
+
+====Verb====
+{{head|es|verb form}}
+
+# {{es-verb form of|person=first-person|number=singular|tense=present|mood=subjunctive|ending=ar|adelantar}}
+# {{es-verb form of|person=third-person|number=singular|tense=present|mood=subjunctive|ending=ar|adelantar}}
+# {{es-verb form of|formal=yes|person=second-person|number=singular|sense=affirmative|mood=imperative|ending=ar|adelantar}}
+
+===Further reading===
+* {{R:DRAE}}
