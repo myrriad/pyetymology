@@ -54,4 +54,3 @@ while not original_query: # if original query is "", then keep repeating it
     GG = GG2
 
 
-

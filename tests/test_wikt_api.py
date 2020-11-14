@@ -67,6 +67,7 @@ class TestAdelante:
             (list2 := (list(wx.sections_by_lang(dom, "Spanish")), "arbitrary#Spanish", "arbitrary", "Spanish"))
         assert v
 
+# TODO: Test Unsupported Titles
 class TestLlevar:
     # https://en.wiktionary.org/wiki/llevar
     def test_all_lang_sections(self, monkeypatch):

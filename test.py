@@ -1,4 +1,19 @@
 import pickle
+
+import numpy as np
+import matplotlib.pyplot as plt
+x=0
+for i in range(10):
+    x=x+0.04
+    y = np.sin(x)
+    plt.scatter(x, y)
+    plt.pause(0.05)
+
+plt.show()
+print("exit")
+
+exit(0)
+
 print(+1)
 
 with open('pyetymology/response.pkl', 'rb') as _input:

@@ -159,3 +159,8 @@ class EtyRelation:
     @property
     def color_id(self):
         return self.origin.o_id
+
+class MissingException(Exception):
+    def __init__(self, message, missing_thing=None):
+        super().__init__(self, message)
+        self.missing_thing = missing_thing

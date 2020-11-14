@@ -1,3 +1,4 @@
+import builtins
 import json
 import pickle
 import string
@@ -19,14 +20,23 @@ import matplotlib.pyplot as plt
 import pyetymology.etyobjects
 from pyetymology import simple_sugi
 import pyetymology.langcode as langcode
+import pyetymology.MissingException as MissingException
 
 ### START helper_api.py
-from typing import List, Generator, Dict
+from typing import List, Generator, Dict, Any
 
 import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology.etyobjects import EtyRelation, Originator
+
+
+def input(__prompt: Any) -> str:
+    global isplotactive
+    if isplotactive:
+        print("Close MatplotLib to Continue")
+        plt.show()
+    return builtins.input(__prompt)
 
 online = True
 
@@ -112,6 +122,7 @@ def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True, anti
     return sections_by_level(sections, 2, recursive, flat, antiredundance)
 
 
+isplotactive = False
 def draw_graph(G, origin, simple=False):
     print("...drawing graph...")
 
@@ -134,7 +145,11 @@ def draw_graph(G, origin, simple=False):
     nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
     # x.draw_networkx_edges(G, pos=poses)
 
-    plt.show()
+    # plt.show()
+    # plt.pause(0.01) pauses for 0.01s, and runs plt's GUI main loop
+    plt.pause(0.01)
+    global isplotactive
+    isplotactive = True
 
 
 def is_in(elem, abbr_set: Dict[str, str]):
@@ -331,7 +346,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
         else:
             pass  # print(repr(sec))
     if not ety_flag and not lemma_flag:
-        raise Exception("Etymology not detected. (If a word has multiple definitions, you must specify it.)")
+        raise MissingException("Etymology not detected. (If a word has multiple definitions, you must specify it.)", missing_thing="etymology")
 
 
 
