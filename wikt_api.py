@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import pyetymology.etyobjects
 from pyetymology import simple_sugi
 import pyetymology.langcode as langcode
-import pyetymology.MissingException as MissingException
+from pyetymology.etyobjects import MissingException
 
 ### START helper_api.py
 from typing import List, Generator, Dict, Any
@@ -211,11 +211,12 @@ def auto_lang(dom, me, word, lang):
     lang_secs = list(sections_by_lang(dom, lang))
 
     if not lang_secs:
-        raise Exception(f"Word \"{word}\" has no entry under language {lang}")
+        raise MissingException(f"Word \"{word}\" has no entry under language {lang}", missing_thing="language_section")
     return lang_secs, me, word, lang
 
-
 def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_mentions_sideways=False):
+    return list(iter(_parse_and_graph(query, wikiresponse, origin, replacement_origin, make_mentions_sideways)))
+def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_mentions_sideways):
     me, word, lang, def_id = query
     _, _, dom = wikiresponse  # res, wikitext, dom
     if replacement_origin is None:
@@ -224,6 +225,8 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
     ety_flag = False
     lemma_flag = False
     sections = sections_by_level(dom, 3)
+
+
 
     def add_node(G, node, color_id=None):
         if color_id is None:
@@ -242,14 +245,17 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
                 def_id = input("Multiple definitions detected. Enter an ID: ")
                 if def_id == "":
                     def_id = 1
-        """
+
         if sec[0].startswith("===Verb===") or sec[0].startswith(f"===Verb {def_id}"):
-            for subsec in helper.sections_by_level(sec, 4):
+
+            """for subsec in helper.sections_by_level(sec, 4):
                 for node in sec[0].ifilter(recursive=False):
                     if isinstance(node, mwp.wikicode.Template):
 
                         pass# print("-"+repr(subsec))
-        """
+                        """
+            lemma_flag = True
+
 
         if sec[0].startswith("===Etymology===") or sec[0].startswith(f"===Etymology {def_id}"):
             if not ety_flag:
@@ -345,8 +351,11 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
             yield G
         else:
             pass  # print(repr(sec))
-    if not ety_flag and not lemma_flag:
-        raise MissingException("Etymology not detected. (If a word has multiple definitions, you must specify it.)", missing_thing="etymology")
+    if not ety_flag:
+        if lemma_flag:
+            raise MissingException("Definition detected, but etymology not detected. (Perhaps it's lemmatized?)", missing_thing="etymology")
+        else:
+            raise MissingException("Neither definition nor etymology detected.", missing_thing="definition")
 
 
 
@@ -409,13 +418,18 @@ def query(me):
     return query, wikiresponse, origin, src, word_urlify
 def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
     try:
-        G = list(iter(parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)))
+        G = parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)
+    except MissingException as e:
+        #if e.missing_thing == "etymology":
+            #print(e)
+            #return
+        #else:
+        raise e
     except Exception as e:
+        raise e
+    finally:
         print(src)
         print(f"https://en.wiktionary.org/wiki/{word_urlify}")
-        raise e
 
-    print(src)
-    print(f"https://en.wiktionary.org/wiki/{word_urlify}")
     assert len(G) == 1 # assert only 1 graph
     return G[0], origin
