@@ -34,6 +34,7 @@ def fetch_query(topic: str, lang: str):
             pickleme = dill.load(f)
             query, wikiresponse, origin = pickleme
             _, wikitext, dom = wikiresponse
+
             """
             # wikitext and dom aren't pickled properly
             # what we need to mimic:
@@ -43,6 +44,7 @@ def fetch_query(topic: str, lang: str):
             """
             res, dom = wx.wikitextparse(wikitext)
             dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
+
             wikiresponse = None, res, dom
             return query, wikiresponse, origin
     except FileNotFoundError as error:
@@ -53,7 +55,18 @@ def fetch_query(topic: str, lang: str):
         pickleme = query, wikiresponse, origin
         with open("query_" + topic + "_" + lang + ".txt", "wb") as output:
             dill.dump(pickleme, output, dill.HIGHEST_PROTOCOL)
-        return pickleme
+
+        """
+        # wikitext and dom aren't pickled properly
+        # what we need to mimic:
+        res, dom = wikitextparse(wikitext)
+
+        dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
+        """
+        res, dom = wx.wikitextparse(wikitext)
+        dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
+        wikiresponse = None, res, dom
+        return query, wikiresponse, origin
 def fetch_resdom(topic):
     wt = fetch_wikitext(topic)
     res, dom = wx.wikitextparse(wt)
@@ -115,7 +128,6 @@ class TestAdelante:
 
     def test_graph(self, monkeypatch):
         monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
-        # original_query = ""  # lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#Spanish"#"Reconstruction:Proto-Italic/feiljos#"
         query, wres, origin = fetch_query("adelante", "Spanish")
         _, wtxt, dom = wres
         wres = None, wtxt, dom
@@ -178,5 +190,17 @@ class TestLlevar:
         v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
             (list2 := (list(wx.sections_by_lang(dom, "Catalan")), "arbitrary#Catalan", "arbitrary", "Catalan"))
         assert v
+    def test_graph(self, monkeypatch):
+        # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
+        query, wres, origin = fetch_query("llevar", "Spanish")
+        _, wtxt, dom = wres
+        wres = None, wtxt, dom
+        G, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
+        G2 = nx.DiGraph()
+        nx.add_path(G2, ["llevar#Spanish$0", "$0{inh|Old Spanish|levar}", "$0{inh|Latin|levāre}", "$0{m|Latin|levō}"])
+        assert nx.is_isomorphic(G, G2)
 
-
+        assert [repr(s) for s in G.nodes] == [s for s in G2.nodes]
+    # G: {llevar#Spanish$0: {}, $0{inh|Old Spanish|levar}: {llevar#Spanish$0: {}}, $0{inh|Latin|levāre}: {$0{inh|Old Spanish|levar}: {}}, $0{m|Latin|levō}: {$0{inh|Latin|levāre}: {}}}
+    # edges: [($0{inh|Old Spanish|levar}, llevar#Spanish$0), ($0{inh|Latin|levāre}, $0{inh|Old Spanish|levar}), ($0{m|Latin|levō}, $0{inh|Latin|levāre})]
+    # nodes: [llevar#Spanish$0, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
