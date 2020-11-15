@@ -23,7 +23,7 @@ import pyetymology.langcode as langcode
 from pyetymology.etyobjects import MissingException
 
 ### START helper_api.py
-from typing import List, Generator, Dict, Any
+from typing import List, Generator, Dict, Any, Tuple
 
 import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
@@ -32,8 +32,8 @@ from pyetymology.etyobjects import EtyRelation, Originator
 
 
 def input(__prompt: Any) -> str:
-    global isplotactive
-    if isplotactive:
+    global _is_plot_active
+    if _is_plot_active:
         print("Close MatplotLib to Continue")
         plt.show()
     return builtins.input(__prompt)
@@ -122,7 +122,7 @@ def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True, anti
     return sections_by_level(sections, 2, recursive, flat, antiredundance)
 
 
-isplotactive = False
+_is_plot_active = False
 def draw_graph(G, origin, simple=False):
     print("...drawing graph...")
 
@@ -148,8 +148,8 @@ def draw_graph(G, origin, simple=False):
     # plt.show()
     # plt.pause(0.01) pauses for 0.01s, and runs plt's GUI main loop
     plt.pause(0.01)
-    global isplotactive
-    isplotactive = True
+    global _is_plot_active
+    _is_plot_active = True
 
 
 def is_in(elem, abbr_set: Dict[str, str]):
@@ -176,7 +176,7 @@ def contains_originator(G: nx.Graph, origin: Originator):
 colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
 
-def wikitextparse(wikitext):
+def wikitextparse(wikitext: str) -> Tuple[Wikicode, List[Wikicode]]:
     res = mwp.parse(wikitext)  # type: Wikicode
     # res = wtp.parse(wikitext)
 
@@ -190,7 +190,7 @@ Returns sections of only 1 lang
 """
 
 
-def auto_lang(dom, me, word, lang):
+def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=None) -> Tuple[List[Wikicode], str, str, str]:
     if not lang or lang == "" or lang is None:
         # try to extract lang from dom
         found_langs = all_lang_sections(dom, flat=True)
@@ -205,7 +205,10 @@ def auto_lang(dom, me, word, lang):
             lang = lang_options[0]
         else:
             while not lang or lang == "" or lang is None:
-                lang = input("Choose a lang from these options: " + str(lang_options))
+                if mimic_input:
+                    lang = mimic_input
+                else:
+                    lang = input("Choose a lang from these options: " + str(lang_options))
 
     me = word + "#" + lang
     lang_secs = list(sections_by_lang(dom, lang))
@@ -359,8 +362,9 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
 
 
 
-def query(me):
+def query(me, mimic_input=None):
     if not me:
+
         me = input("Enter a query: " + me)
     terms = me.split("#")
     def_id = None
@@ -406,7 +410,7 @@ def query(me):
     res, dom = wikitextparse(wikitext)
     # Here was the lang detection
 
-    dom, me, word, lang = auto_lang(dom, me, word, lang)
+    dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
     assert me
     assert word
     assert lang
