@@ -3,6 +3,8 @@ from typing import List
 import dill
 from unittest import TestCase
 
+import networkx as nx
+import networkx.algorithms.isomorphism as iso
 import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
@@ -117,8 +119,15 @@ class TestAdelante:
         query, wres, origin = fetch_query("adelante", "Spanish")
         _, wtxt, dom = wres
         wres = None, wtxt, dom
-        GG, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
-        assert True
+        G, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
+        G2 = nx.DiGraph()
+        nx.add_path(G2, ["adelante#Spanish$0", "$0{m|Spanish|delante ['in front']}"])
+        assert nx.is_isomorphic(G, G2)
+
+        assert [repr(s) for s in G.nodes] == [s for s in G2.nodes]
+        # G nodes: [adelante#Spanish$0, $0{m|Spanish|delante ['in front']}]
+        # G2 nodes: ['adelante#Spanish$0', "$0{m|Spanish|delante ['in front']}"]
+
 
 # TODO: Test Unsupported Titles
 class TestLlevar:
