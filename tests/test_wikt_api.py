@@ -197,10 +197,11 @@ class TestLlevar:
         wres = None, wtxt, dom
         G, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
         G2 = nx.DiGraph()
-        nx.add_path(G2, ["llevar#Spanish$0", "$0{inh|Old Spanish|levar}", "$0{inh|Latin|levāre}", "$0{m|Latin|levō}"])
+        nx.add_path(G2, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', 'llevar#Spanish$0'])
         assert nx.is_isomorphic(G, G2)
 
-        assert [repr(s) for s in G.nodes] == [s for s in G2.nodes]
+        assert [repr(s) for s in G.nodes] == [s for s in reversed(list(G2.nodes))] # nx reversed the nodes for some reason
+        assert [(repr(l), repr(r)) for l, r in G.edges] == [e for e in reversed(list(G2.edges))]
     # G: {llevar#Spanish$0: {}, $0{inh|Old Spanish|levar}: {llevar#Spanish$0: {}}, $0{inh|Latin|levāre}: {$0{inh|Old Spanish|levar}: {}}, $0{m|Latin|levō}: {$0{inh|Latin|levāre}: {}}}
     # edges: [($0{inh|Old Spanish|levar}, llevar#Spanish$0), ($0{inh|Latin|levāre}, $0{inh|Old Spanish|levar}), ($0{m|Latin|levō}, $0{inh|Latin|levāre})]
     # nodes: [llevar#Spanish$0, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
