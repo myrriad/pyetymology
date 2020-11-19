@@ -225,13 +225,14 @@ class LemmaRelation:
 
     def __str__(self):
         if not self:
-            return "{{" + self.rtype + " null " + repr(self.params) + "}}"
+            return "L{{" + self.rtype + " null " + repr(self.params) + "}}"
         assert self.word is not None
         assert self.langname is not None
         paramsc = repr(self.params[2:])  # slice off the first 2 args
         paramsc = "" if paramsc == "[]" else " " + paramsc  # convert []s to ""
 
-        return "{" + self.rtype + "|" + self.langname + "|" + self.word + paramsc + "}"
+        return "L{" + self.rtype + "|" + self.langname + "|" + self.word + "}" # + paramsc + "}"
+        # return f"L{{{self.rtype}|{self.langname}|{self.word}}}"
 
     def __repr__(self):
         return "$" + str(self.origin.o_id) + str(self)

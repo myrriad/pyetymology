@@ -8,3 +8,4 @@ These diacritics will automatically be stripped out in a language-specific fashi
 """
 
 # TODO: https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
+# TODO: llegaron -> llegar messes up and creates duplicates. This occurs whenever matches() matches two different duplicates

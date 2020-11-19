@@ -166,6 +166,10 @@ def contains_originator(G: nx.Graph, origin: Originator):
             node: EtyRelation
             if node.matches_query(origin.me):
                 return node
+        if isinstance(node, LemmaRelation):
+            node: LemmaRelation
+            if node.matches_query(origin.me):
+                return node
     return None
 
 
