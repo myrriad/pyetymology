@@ -37,7 +37,7 @@ def input(__prompt: Any) -> str:
         plt.show()
     return builtins.input(__prompt)
 
-online = True
+online = True # TODO: online=False displays wrong versions of ety trees without throwing an exception
 
 session = requests.Session()
 session.mount("http://", requests.adapters.HTTPAdapter(max_retries=2))  # retry up to 2 times
@@ -216,8 +216,8 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
         raise MissingException(f"Word \"{word}\" has no entry under language {lang}", missing_thing="language_section")
     return lang_secs, me, word, lang
 
-def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_mentions_sideways=False):
-    return list(iter(_parse_and_graph(query, wikiresponse, origin, replacement_origin, make_mentions_sideways)))
+def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_mentions_sideways=False) -> nx.DiGraph:
+    return _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_mentions_sideways)
 def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_mentions_sideways):
     me, word, lang, def_id = query
     _, _, dom = wikiresponse  # res, wikitext, dom
@@ -239,9 +239,16 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
         G.add_node(node, id=origin.o_id, color=color)
 
     G = nx.DiGraph()
+    prev = replacement_origin
+
+    add_node(G, replacement_origin, color_id=replacement_origin.color_id if replacement_origin else None)
+    # if replacement_origin is not the origin, then that means that the origin was replaced
+    # by a preexisting node that was already colored
+    # therefore we should not colorize it
 
     for sec in sections:
 
+        # TODO: All parts of speech at https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
         if (sec[0].startswith("===Etymology") and not sec[0].startswith("===Etymology===")) \
                 or (sec[0].startswith("===Verb") and not sec[0].startswith("===Verb===")):
             # Therefore, if it starts with something like ===Etymology 1===
@@ -250,6 +257,7 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
                 if def_id == "":
                     def_id = 1
 
+        # TODO: https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
         if sec[0].startswith("===Verb===") or sec[0].startswith(f"===Verb {def_id}"):
             # LEMMA https://en.wiktionary.org/wiki/Category:Form-of_templates
             # https://en.wiktionary.org/wiki/Module:form_of/data
@@ -259,20 +267,35 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
             # Note: spaces are replaced with underlines in urls
 
             for subsec in sections_by_level(sec, 4):
+
+                lemma_rels = []
                 for node in sec[0].ifilter(recursive=False):
                     if isinstance(node, mwp.wikicode.Template):
                         node: mwp.wikicode.Template
                         templ_name = node.name
                         if templ_name[-3:] == " of":
+                            if ety_flag:
+                                raise Exception("both Ety and Lemma are being parsed?")
                             #lang = node.params[0]
                             # word = node.params[1]
                             # print(f"Found lemma?: lang: {lang} word: {word}")
                             lemma_rel = LemmaRelation(origin, node)
                             # print("-"+repr(subsec))
+                            lemma_flag = True
+
+                            if not any(lemma_rel.matches(x) for x in lemma_rels): # if it doesn't match any
+                                lemma_rels.append(lemma_rel)
+                                # Start graphing
+                                add_node(G, lemma_rel)
+                                if prev:
+                                    G.add_edge(lemma_rel, prev)
+                                    # prev = lemma_rel
+
+
 
             # Basic methodology: detect if a template ends in " of", such as "past participle of"
 
-            lemma_flag = True
+            # lemma_flag = True
 
 
         if sec[0].startswith("===Etymology===") or sec[0].startswith(f"===Etymology {def_id}"):
@@ -280,8 +303,10 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
                 ety_flag = True
             else:
                 raise Exception("Etymology is being parsed twice? ")
+            if lemma_flag:
+                raise Exception("Both Lemma and Ety are being parsed?")
             # for node in sec[0].ifilter_templates(): #type: mwp.wikicode.Template
-            #     sec[0].remove(node)
+            # sec[0].remove(node)
 
             dotyet = False
             firstsentence = []
@@ -311,12 +336,6 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
 
             # prev = origin
             # start graphing
-            prev = replacement_origin
-
-            add_node(G, replacement_origin, color_id=replacement_origin.color_id if replacement_origin else None)
-            # if replacement_origin is not the origin, then that means that the origin was replaced
-            # by a preexisting node that was already colored
-            # therefore we should not colorize it
 
             between_text = []
 
@@ -333,17 +352,13 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
                            (EtyRelation.ety_abbrs, EtyRelation.aff_abbrs,
                             EtyRelation.sim_abbrs)):
                         # inh, der, bor, m
-                        # print(between_text)
                         if any("+" in s for s in
                                between_text):  # or helper_api.is_in(token.rtype, helper_api.EtyRelation.aff_abbrs):
                             prevs_parents = G.edges(nbunch=prev)  #
-                            # prev2 = cache.nth_prev(2)
-                            # print("parnt: " + str(parnt))
                             parnt = next(iter(prevs_parents), (None, None))[1]
                             # parnt = prev2
                             add_node(G, token)
                             G.add_edge(token, parnt)
-                            # print(cache.array)
 
                             # sister node
                         else:
@@ -360,14 +375,16 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
                 else:
                     between_text.append(token)
 
-            yield G
+            # yield G
         else:
             pass  # print(repr(sec))
     if not ety_flag:
         if lemma_flag:
-            raise MissingException("Definition detected, but etymology not detected. (Perhaps it's lemmatized?)", missing_thing="etymology")
+            pass
+            # raise MissingException("Definition detected, but etymology not detected. (Perhaps it's lemmatized?)", missing_thing="etymology")
         else:
             raise MissingException("Neither definition nor etymology detected.", missing_thing="definition")
+    return G
 
 
 
@@ -444,5 +461,6 @@ def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None
         print(src)
         print(f"https://en.wiktionary.org/wiki/{word_urlify}")
 
-    assert len(G) == 1 # assert only 1 graph
-    return G[0], origin
+    # print(len(G))
+    assert type(G) == nx.DiGraph # assert only 1 graph
+    return G, origin

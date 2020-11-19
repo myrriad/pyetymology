@@ -181,17 +181,17 @@ class LemmaRelation:
         assert template.name[-3:] == " of"
         print(template)
         if template.has("lang"):
-            lang = template.get("lang")
-            word = template.get("1")
+            lang = str(template.get("lang"))
+            word = str(template.get("1"))
             # deprecated
         elif template.has("2"):
 
-            lang = template.get("1")
-            word = template.get("2")
+            lang = str(template.get("1"))
+            word = str(template.get("2"))
         else:
             # es-verb form of
             # TODO: add support for "verb", "inf", "infinitive"
-            word = template.get("1")
+            word = str(template.get("1"))
             dashidx = str(template.name).index("-")
             lang = template.name[:dashidx]
 
@@ -220,6 +220,9 @@ class LemmaRelation:
             word, lang = terms
             return self.word == word and self.langname == lang
 
+    def matches(self, other):
+        return type(other) == LemmaRelation and repr(self) == repr(other)
+
     def __str__(self):
         if not self:
             return "{{" + self.rtype + " null " + repr(self.params) + "}}"
@@ -236,6 +239,8 @@ class LemmaRelation:
     def __bool__(self):
         return not self.null
 
+    # def __eq__(self, other): This must be made compatable with __hash__() to work w/ nx - not worth it
+    #     return self.__repr__() == other.__repr__()
     @property
     def color_id(self):
         return self.origin.o_id
