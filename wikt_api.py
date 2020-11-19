@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 import pyetymology.etyobjects
 from pyetymology import simple_sugi
 import pyetymology.langcode as langcode
-from pyetymology.etyobjects import MissingException
 
 ### START helper_api.py
 from typing import List, Generator, Dict, Any, Tuple
@@ -28,7 +27,7 @@ from typing import List, Generator, Dict, Any, Tuple
 import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology.etyobjects import EtyRelation, Originator
+from pyetymology.etyobjects import EtyRelation, Originator, LemmaRelation, MissingException
 
 
 def input(__prompt: Any) -> str:
@@ -239,6 +238,8 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
             color = colors[color_id]
         G.add_node(node, id=origin.o_id, color=color)
 
+    G = nx.DiGraph()
+
     for sec in sections:
 
         if (sec[0].startswith("===Etymology") and not sec[0].startswith("===Etymology===")) \
@@ -250,13 +251,27 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
                     def_id = 1
 
         if sec[0].startswith("===Verb===") or sec[0].startswith(f"===Verb {def_id}"):
+            # LEMMA https://en.wiktionary.org/wiki/Category:Form-of_templates
+            # https://en.wiktionary.org/wiki/Module:form_of/data
+            # Wiktionary templates: https://en.wiktionary.org/wiki/Category:Template_interface_modules
+            # all templates: https://en.wiktionary.org/wiki/Special:AllPages?from=&to=&namespace=10
+            # ^^ Note: Capitals are displayed before lowercase
+            # Note: spaces are replaced with underlines in urls
 
-            """for subsec in helper.sections_by_level(sec, 4):
+            for subsec in sections_by_level(sec, 4):
                 for node in sec[0].ifilter(recursive=False):
                     if isinstance(node, mwp.wikicode.Template):
+                        node: mwp.wikicode.Template
+                        templ_name = node.name
+                        if templ_name[-3:] == " of":
+                            #lang = node.params[0]
+                            # word = node.params[1]
+                            # print(f"Found lemma?: lang: {lang} word: {word}")
+                            lemma_rel = LemmaRelation(origin, node)
+                            # print("-"+repr(subsec))
 
-                        pass# print("-"+repr(subsec))
-                        """
+            # Basic methodology: detect if a template ends in " of", such as "past participle of"
+
             lemma_flag = True
 
 
@@ -294,15 +309,9 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
             print("1st sentence is " + repr(firstsentence))
             ancestry = []
 
-            G = nx.DiGraph()
             # prev = origin
-
+            # start graphing
             prev = replacement_origin
-
-
-            # print("test")
-
-            # add_node(G, origin)
 
             add_node(G, replacement_origin, color_id=replacement_origin.color_id if replacement_origin else None)
             # if replacement_origin is not the origin, then that means that the origin was replaced

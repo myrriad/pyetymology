@@ -91,6 +91,7 @@ class EtyRelation:
         if rtype in sim_abbrs:
             rtype = sim_abbrs[rtype]
 
+        # TODO: shift to using template.get("1") instead of template.params[0]
         self.null = False
         self.affixal = None
         if rtype in ety_abbrs.values():  # if it's an etymological relation
@@ -146,6 +147,85 @@ class EtyRelation:
         assert self.word is not None
         assert self.langname is not None
         paramsc = repr(self.params[3:])  # slice off the first 3 args
+        paramsc = "" if paramsc == "[]" else " " + paramsc  # convert []s to ""
+
+        return "{" + self.rtype + "|" + self.langname + "|" + self.word + paramsc + "}"
+
+    def __repr__(self):
+        return "$" + str(self.origin.o_id) + str(self)
+
+    def __bool__(self):
+        return not self.null
+
+    @property
+    def color_id(self):
+        return self.origin.o_id
+
+
+class LemmaRelation:
+
+    def __init__(self, origin: Originator, template: mwparserfromhell.wikicode.Template):
+        self.origin = origin  # type: Originator
+
+        rtype = str(template.name)
+        params = template.params
+        lang = word = _selflang = None
+
+        self.null = False
+        # there are a ton of lemma templates (see
+        # https://en.wiktionary.org/wiki/Category:Form-of_templates
+        # https://en.wiktionary.org/wiki/Module:form_of
+        # https://en.wiktionary.org/wiki/Module:form_of/data
+        # Just see if it ends in " of" and call it a day
+
+        assert template.name[-3:] == " of"
+        print(template)
+        if template.has("lang"):
+            lang = template.get("lang")
+            word = template.get("1")
+            # deprecated
+        elif template.has("2"):
+
+            lang = template.get("1")
+            word = template.get("2")
+        else:
+            # es-verb form of
+            # TODO: add support for "verb", "inf", "infinitive"
+            word = template.get("1")
+            dashidx = str(template.name).index("-")
+            lang = template.name[:dashidx]
+
+        print(f"Found lemma?: lang: {lang} word: {word}")
+
+        self.params = params
+        self.rtype = rtype
+        self.lang = lang
+        self.langname = langcodes.name(lang, use_ety=True, use_fam=True)
+        if lang and not self.langname:
+            print(f"{lang} is None")
+        self.word = word
+
+    def matches_query(self, me) -> bool:
+        terms = me.split("#")
+        def_id = None
+        if len(terms) == 1:
+            word = me
+            warnings.warn("Language not detected for query " + me)
+            return self.word == word
+        elif len(terms) == 2:
+            word, lang = terms
+            return self.word == word and self.langname == lang
+        elif len(terms) == 3:
+            warnings.warn("definition ids not supported yet")
+            word, lang = terms
+            return self.word == word and self.langname == lang
+
+    def __str__(self):
+        if not self:
+            return "{{" + self.rtype + " null " + repr(self.params) + "}}"
+        assert self.word is not None
+        assert self.langname is not None
+        paramsc = repr(self.params[2:])  # slice off the first 2 args
         paramsc = "" if paramsc == "[]" else " " + paramsc  # convert []s to ""
 
         return "{" + self.rtype + "|" + self.langname + "|" + self.word + paramsc + "}"

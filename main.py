@@ -53,4 +53,6 @@ while not original_query: # if original query is "", then keep repeating it
     ety.draw_graph(GG2, origin)
     GG = GG2
 
+# TODO: Offline mode using a dump at https://dumps.wikimedia.org/enwiktionary/
+
 
