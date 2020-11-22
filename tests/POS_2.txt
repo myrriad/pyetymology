@@ -1,0 +1,58 @@
+
+==Danish==
+
+===Etymology===
+From {{inh|da|non|þing|g=n|t=assembly, council, business}}, from {{der|da|gem-pro|*þingą}}, cognate with {{cog|is|þing||assembly, parliament}}, {{cog|sv|-}}, {{cog|nb|ting||thing}}, {{cog|en|thing}}, {{cog|nl|ding}}, {{cog|de|Ding}}.
+
+===Pronunciation===
+* {{IPA|da|/tenˀɡ/|[ˈtˢeŋˀ]}}
+* {{rhymes|da|eŋ}}
+
+===Noun 1===
+{{da-noun|en}}
+
+# {{l|en|thing}} {{q|an individual object}}
+
+====Inflection====
+{{da-decl|en}}
+
+====Derived terms====
+* {{l|da|alting||everything}}
+* {{l|da|ingenting||nothing}}
+* {{l|da|tingslig||regarding things}}
+
+===Noun 2===
+{{da-noun|et}}
+
+# {{l|en|assembly}}, {{l|en|parliament}} {{q|a judicial or legislative assembly}}
+
+====Inflection====
+{{da-decl|et}}
+
+====Derived terms====
+* {{l|da|alting||Icelandic parliament}}
+* {{l|da|folketing||parliament}} ({{l|da|Folketinget||Danish parliament}})
+* {{l|da|landsting||regional parliament}} ({{l|da|Landstinget||Greenlandic parliament}})
+* {{l|da|på tinge||in parliament}}
+
+----
+
+==Faroese==
+
+===Etymology===
+From {{der|fo|non|þing|t=assembly, council, business}}, from {{der|fo|gem-pro|*þingą}}.
+
+===Noun===
+{{fo-noun|n|tings|ting}}
+
+# [[parliament]]
+# [[thing]]
+
+====Declension====
+{{fo-decl-noun-n3|ting}}
+
+====Derived terms====
+{{der2|fo|tingmaður|tingkvinna}}
+
+----
+

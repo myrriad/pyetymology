@@ -1,6 +1,0 @@
-https://en.wiktionary.org/wiki/Category:Pages_using_deprecated_templates
-
-llevaron: {{es-verb form of|person=third-person|number=plural|tense=preterit|mood=indicative|ending=ar|llevar}}
-
-
-

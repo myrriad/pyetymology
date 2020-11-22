@@ -8,4 +8,64 @@ These diacritics will automatically be stripped out in a language-specific fashi
 """
 
 # TODO: https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
-# TODO: llegaron -> llegar messes up and creates duplicates. This occurs whenever matches() matches two different duplicates
+# TODO: wicked, learned, vino#Spanish etc.: When a lemma form AND an etymology exists, but they're for different definitions
+# TODO: display convenience definitions
+# TODO: display not-ancestral etymology, ie. cognates
+# TODO: currently, each wikicode prints recursively and so there's a lot of redundance
+
+# TODO: Deprecated testing https://en.wiktionary.org/wiki/Category:Pages_using_deprecated_templates
+
+# TODO: llevaron: {{es-verb form of|person=third-person|number=plural|tense=preterit|mood=indicative|ending=ar|llevar}}
+
+# TODO: Verb 2, Noun 2, etc. According to the Entry Layout, this is actually disallowed:
+"""
+Some POS headers are explicitly disallowed:
+
+...
+“(POS) (number)”: Noun 1, Noun 2, etc.
+"""
+# TODO: Except there are exceptions: see POS_2.txt
+
+# TODO: Template back-formation https://en.wiktionary.org/wiki/Template:back-formation
+# TODO: Template portmanteau, blend, coined
+
+
+
+# TODO: Entry layout manual: https://en.wiktionary.org/wiki/Wiktionary:Entry_layout
+
+# TODO: Etymology manual: https://en.wiktionary.org/wiki/Wiktionary:Etymology
+
+
+"""
+Etymology jargon
+Some words have conventional usage in etymology:
+
+from
+Using a bare “from” denotes a single step, with no intermediate steps – a direct descendant or borrowing – as in: “From French, from Latin, from Proto-Italic, from Proto-Indo-European”
+ultimately from
+Using “ultimately from” indicates that some intermediate steps have been elided, as in “Ultimately from Proto-Indo-European” (but by some other languages in between).
+akin / related
+The term “akin” is used to indicate an attested word that is presumed to be etymologically related, when the ultimate etymon is not attested. This is used particularly for proto-languages, for language groups, and for unattested terms in attested languages.
+For example, in tracing an English word back to Proto-Indo-European (which is not attested), presumed cognates of the Old English word can be referred to as “from Old English X, akin to Old High German Y, Latin Z, etc.”
+Similarly, if a word can be traced back to an indeterminate Germanic language, one can give examples of related attested words, but not state a specific etymon (because unknown), writing for instance “of Germanic origin; akin to Old Saxon X” (but might be from Old Frisian or another language).
+“Akin” can also be used when the specific etymon is not attested in an otherwise attested language, for example: “connive: ultimately from Latin com- (“together”) + base akin to nictō (“I wink”)” (but *nivō is not attested).
+"Akin" is a weaker claim than "cognate to". The former only implies relationship in some, possibly so far undetermined fashion, while the latter is commonly understood to imply descent from a common ancestor.
+"""
+
+# TODO: Inh
+"""
+A significant category of words in a language are the so-called ‘native’ or ‘inherited’ words; 
+in some languages, but not all, they form the majority of words.
+ This means that they have developed from an earlier form of the language which may or may not have gone by the same name. 
+ Some of these ancestor-languages were written down and are well-attested, but others are not. 
+ For example, French, Spanish, Italian, Romanian and Portuguese all developed from Latin. 
+ The French word clef, for instance, and the Spanish word llave both evolved from the Latin word clāvis (“key”) (they are cognates). 
+They were not borrowed from Latin; the Latin language evolved naturally in different areas into the different forms.
+"""
+
+# TODO: Handling Etymology 1s is a pain, because it changes the nesting:
+"""
+Note that in the case of multiple etymologies, 
+all subordinate headers need to have their levels increased by 1 in order 
+to comply with the fundamental concept of showing dependence through nesting.
+"""

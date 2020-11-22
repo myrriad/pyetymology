@@ -1,0 +1,103 @@
+==English==
+
+===Etymology 1===
+{{root|en|ine-pro|*weyk-|id=separate}}
+1225–75, {{inh|en|enm|wikked}}, {{m|enm|wikke}}, an alteration of {{m|enm|wicke}}, adjectival use of {{inh|en|ang|wicca||wizard, sorcerer}}, from {{inh|en|gem-pro|*wikkô||necromancer, sorcerer}}.
+
+====Pronunciation====
+* {{enPR|wĭkʹĭd}}, {{IPA|en|/ˈwɪkɪd/}}
+* {{audio|en|en-us-wicked.ogg|Audio (US)}}
+
+====Adjective====
+{{en-adj|er|more}}
+
+# [[evil|Evil]] or [[mischievous]] by nature.
+#: {{syn|en|evil|immoral|malevolent|malicious|nefarious|twisted|villainous|Thesaurus:evil}}
+#* {{quote-book|en|year=1963|author={{w|Margery Allingham}}|title={{w|The China Governess}}
+|chapter=6|url=http://openlibrary.org/works/OL2004261W
+|passage=&lsquo;[…] I remember a lady coming to inspect St. Mary's Home where I was brought up and seeing us all in our lovely Elizabethan uniforms we were so proud of, and bursting into tears all over us because “it was '''wicked''' to dress us like charity children”.&nbsp;[…]’.}}
+#* {{quote-song|en|author=Chris Isaak|authorlink=Chris Isaak|album=Heart Shaped World|title=Wicked Game|year=1989|passage=What a '''wicked''' game to play, to make me feel this way / What a '''wicked''' thing to do, to let me dream of you / What a '''wicked''' thing to say, you never felt this way}}
+# {{lb|en|slang}} [[excellent|Excellent]]; [[awesome]]; [[masterful]].
+#: {{syn|en|evil|awesome|bad|cool|dope|excellent|far out|groovy|hot|rad|Thesaurus:excellent}}
+#: {{ux|en|That was a '''wicked''' guitar solo, bro!}}
+
+=====Usage notes=====
+Use of \"wicked\" as an adjective rather than an adverb is considered an error in the Boston dialect.<ref>[https://www.bostonglobe.com/2020/01/31/metro/does-rachel-dratch-use-wicked-correctly-new-hyundai-super-bowl-ad/ Hyundai Super Bowl ad has one wicked bad mistake, if you ask Bostonians]</ref>
+
+=====Derived terms=====
+* {{l|en|wickedly}}
+* {{l|en|wickedness}}
+* {{l|en|wicked tongue}}
+
+=====Translations=====
+{{trans-top|evil or mischevous}}
+* Arabic: {{t+|ar|شِرِير}}
+* Thai: {{t+|th|เจ๋ง}}
+{{trans-bottom}}
+
+====Adverb====
+{{en-adv|-}}
+
+# {{lb|en|slang|New England|British}} [[very|Very]], [[extremely]].
+#: {{syn|en|hella|helluv}}
+#: {{ux|en|The band we went to see the other night was '''wicked''' loud!}}
+
+=====Translations=====
+{{trans-top|slang: very}}
+* Czech: {{t|cs|děsně}}
+* Swedish: {{t+|sv|grymt}}, {{t+|sv|fett}}
+{{trans-bottom}}
+
+====Noun====
+{{en-plural noun}}
+
+# People who are wicked.<ref>[http://www.oxfordlearnersdictionaries.com/us/definition/english/wicked_2 ''wicked'' as a noun in the ''Oxford dictionary'']</ref>
+
+=====Translations=====
+{{trans-top|people who are wicked}}
+* Arabic: {{t|ar|الْفُجَّارِ}}
+* Yiddish: {{t|yi|רשעים|m-p|tr=r'shó'im}}
+{{trans-bottom}}
+
+===Etymology 2===
+See {{m|en|wick}}.
+
+====Pronunciation====
+* {{enPR|wĭkt}}, {{IPA|en|/wɪkt/}}
+** {{audio|en|LL-Q1860 (eng)-Vealhurl-wicked (wick).wav|Audio (UK)}}
+
+====Verb====
+{{head|en|verb form}}
+
+# {{en-past of|wick}}
+
+====Adjective====
+{{en-adj|-}}
+
+# Having a [[wick]].
+#: {{ux|en|a two-'''wicked''' lamp}}
+#* {{quote-book|en|year=1863|author=Sheridan Le Fanu|title={{w|The House by the Churchyard}}|passage=Up went Moggy, with her thick-'''wicked''' kitchen candle, to seek repose; {{...}}}}
+
+=====Derived terms=====
+* {{l|en|multiwicked}}
+
+===Etymology 3===
+See {{m|en|wick}}.
+
+====Pronunciation====
+* {{IPA|en|/ˈwɪkɪd/}}
+* {{audio|en|en-us-wicked.ogg|Audio (US)}}
+
+====Adjective====
+{{head|en|adjective}}
+
+# {{lb|en|UK|dialect|obsolete}} Active; brisk.
+# (Alternative form of) ''[[wick]]'' (Etymology 3 Adjective), as applying to inanimate objects only.
+# {{lb|en|British|dialect|chiefly|Yorkshire}} Infested with [[maggot]]s.
+
+===References===
+<references/>
+
+{{catlangname|en|degree adverbs|heteronyms|intensifiers|terms with unexpected syllabic -ed}}
+
+----
