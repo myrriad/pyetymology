@@ -20,7 +20,7 @@ class TestLlevar:
     def test_all_lang_sections(self, monkeypatch):
         monkeypatch.setattr('builtins.input', lambda _: "dummy_input")
 
-        res, dom = fetch_resdom("llevar")
+        res, dom = fetch_resdom("llevar", redundance=True)
         sections = list(wx.all_lang_sections(dom, flat=False)) #type: List[List[Wikicode]]
         assert len(sections) == 2
         catalan = sections[0][0]
@@ -47,7 +47,7 @@ class TestLlevar:
         assert str(spanish) == '==Spanish==\n\n'
 
     def test_section_detect(self):
-        res, dom = fetch_resdom("llevar")
+        res, dom = fetch_resdom("llevar", redundance=True)
         secs = list(wx.sections_by_level(dom, 3))
         assert secs == [['===Etymology===\nFrom {{inh|ca|la|levāre}}, present active infinitive of {{m|la|levō}}.\n\n'],
                         ['===Pronunciation===\n* {{ca-IPA}}\n\n'],
@@ -68,7 +68,7 @@ class TestLlevar:
 
 # [['===Etymology===\nFrom {{inh|ca|la|levāre}}, present active infinitive of {{m|la|levō}}.\n\n'], ['===Pronunciation===\n* {{ca-IPA}}\n\n'], ['===Verb===\n{{ca-verb}}\n\n# to [[remove]], to [[take out]]\n\n', '====Conjugation====\n{{ca-conj-ar|llev}}\n\n', '====Derived terms====\n* {{l|ca|llevaneu}}\n* {{l|ca|llevar-se}}\n\n'], ['===Further reading===\n* {{R:IEC2}}\n* {{R:GDLC}}\n* {{R:DNV}}\n* {{R:DCVB}}\n\n----\n\n']]
     def test_auto_lang(self, monkeypatch):
-        res, dom = fetch_resdom("llevar")
+        res, dom = fetch_resdom("llevar", redundance=True)
         monkeypatch.setattr('builtins.input', lambda _: "Spanish")
 
         v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \

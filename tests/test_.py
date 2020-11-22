@@ -41,7 +41,7 @@ def fetch_query(topic: str, lang: str):
 
             dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
             """
-            res, dom = wx.wikitextparse(wikitext)
+            res, dom = wx.wikitextparse(wikitext, redundance=True)
             dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
 
             wikiresponse = None, res, dom
@@ -62,11 +62,11 @@ def fetch_query(topic: str, lang: str):
 
         dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
         """
-        res, dom = wx.wikitextparse(wikitext)
+        res, dom = wx.wikitextparse(wikitext, redundance=True)
         dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
         wikiresponse = None, res, dom
         return query, wikiresponse, origin
-def fetch_resdom(topic, redundance=True):
+def fetch_resdom(topic, redundance=False):
     wt = fetch_wikitext(topic)
     res, dom = wx.wikitextparse(wt, redundance=redundance)
     return res, dom

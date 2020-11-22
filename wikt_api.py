@@ -180,7 +180,7 @@ def contains_originator(G: nx.Graph, origin: Originator):
 colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
 
-def wikitextparse(wikitext: str, redundance=True) -> Tuple[Wikicode, List[Wikicode]]:
+def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     res = mwp.parse(wikitext)  # type: Wikicode
     # res = wtp.parse(wikitext)
 
