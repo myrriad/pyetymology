@@ -76,6 +76,7 @@ class Test:
         assert wx.has_exact_prefix("==Spanish==", "==")
         assert not wx.has_exact_prefix("===Etymology===", "==")
     def test_fetch(self):
+        return # don't make too many API queries
         q1 = fetch_query("adelante", "Spanish")
         q2 = wx.query("adelante#Spanish", redundance=True)
         query1, wres1, o1 = q1

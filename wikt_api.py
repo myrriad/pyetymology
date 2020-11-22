@@ -56,7 +56,7 @@ If there is a subheader, it will be packaged after the specified main header tha
 """
 
 
-def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False, antiredundance=False) -> Generator[List[Wikicode], None, None]:
+def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[List[Wikicode], None, None]:
 
 
     in_section = False
@@ -78,15 +78,16 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat
             else:
                 in_section = True # don't yield if we're just starting out, as it will be empty
 
-            if antiredundance: # if we're antiredundance,
-                # substring our string to cut out the children, which automatically come packaged with the parent
-                # TODO: possible injection
-                try:
-                    added = sec[:str(sec).index(childprefix)]
-                except ValueError:
-                    added = sec
-            else:
-                added = sec
+            # Antiredundance removed b/c of possible injection; plus, there's a better way of making mwp return it flat in query()
+            # with query(redundance=False)
+
+            # if antiredundance:
+            #    try:
+            #        added = sec[:str(sec).index(childprefix)]
+            #    except ValueError:
+            #        added = sec
+
+            added = sec
             builder = [added]  # start building
             continue
         if not in_section: # skip everything until we get to our first header
@@ -118,8 +119,8 @@ def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikico
             break
 
 
-def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True, antiredundance=False) -> Generator[List[Wikicode], None, None]:
-    return sections_by_level(sections, 2, recursive, flat, antiredundance)
+def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> Generator[List[Wikicode], None, None]:
+    return sections_by_level(sections, 2, recursive=recursive, flat=flat)
 
 
 _is_plot_active = False

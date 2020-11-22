@@ -39,7 +39,8 @@ class TestLlevar:
         assert str(catalan) == catalantxt
         assert str(spanish) == spanishtxt
 
-        sections = list(wx.all_lang_sections(dom, antiredundance=True)) #type: List[List[Wikicode]]
+        res, dom = fetch_resdom("llevar", redundance=False)
+        sections = list(wx.all_lang_sections(dom)) #type: List[List[Wikicode]] # This has been changed, b/c the removal of antiredundance
         assert len(sections) == 2
         catalan = sections[0]
         spanish = sections[1]
