@@ -2,6 +2,8 @@ import string
 import warnings
 from typing import Tuple
 
+import networkx as nx
+
 import mwparserfromhell
 
 from pyetymology.langcode import langcodes
@@ -247,6 +249,8 @@ class LemmaRelation:
         return self.origin.o_id
 
 class MissingException(Exception):
-    def __init__(self, message, missing_thing=None):
+
+    def __init__(self, message, missing_thing=None, G:nx.DiGraph = None):
         super().__init__(self, message)
+        self.G = G
         self.missing_thing = missing_thing

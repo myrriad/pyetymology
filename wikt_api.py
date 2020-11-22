@@ -3,6 +3,7 @@ import json
 import pickle
 import string
 import urllib
+import warnings
 
 import grandalf
 import mwparserfromhell as mwp
@@ -222,9 +223,8 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
         raise MissingException(f"Word \"{word}\" has no entry under language {lang}", missing_thing="language_section")
     return lang_secs, me, word, lang
 
+
 def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_mentions_sideways=False) -> nx.DiGraph:
-    return _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_mentions_sideways)
-def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_mentions_sideways):
     me, word, lang, def_id = query
     _, _, dom = wikiresponse  # res, wikitext, dom
     if replacement_origin is None:
@@ -389,8 +389,28 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
             pass
             # raise MissingException("Definition detected, but etymology not detected. (Perhaps it's lemmatized?)", missing_thing="etymology")
         else:
-            raise MissingException("Neither definition nor etymology detected.", missing_thing="definition")
+            raise MissingException("Neither definition nor etymology detected.", missing_thing="definition", G=G)
     return G
+def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
+    try:
+        G = parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)
+    except MissingException as e:
+        if e.missing_thing == "definition":
+            warnings.warn(str(e))
+            G = e.G
+            # DID: soft crash
+        else:
+            raise e
+    except Exception as e:
+        raise e
+    finally:
+        print(src)
+        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
+
+    # print(len(G))
+    assert type(G) == nx.DiGraph # assert only 1 graph
+    return G, origin
+
 
 
 def query(me, mimic_input=None, redundance=False):
@@ -451,21 +471,4 @@ def query(me, mimic_input=None, redundance=False):
     wikiresponse = (res, wikitext, dom)
     origin = Originator(me)
     return query, wikiresponse, origin, src, word_urlify
-def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
-    try:
-        G = parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)
-    except MissingException as e:
-        #if e.missing_thing == "etymology":
-            #print(e)
-            #return
-        #else:
-        raise e
-    except Exception as e:
-        raise e
-    finally:
-        print(src)
-        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
 
-    # print(len(G))
-    assert type(G) == nx.DiGraph # assert only 1 graph
-    return G, origin

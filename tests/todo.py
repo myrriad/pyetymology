@@ -15,7 +15,7 @@ These diacritics will automatically be stripped out in a language-specific fashi
 
 # TODO: Deprecated testing https://en.wiktionary.org/wiki/Category:Pages_using_deprecated_templates
 
-# TODO: llevaron: {{es-verb form of|person=third-person|number=plural|tense=preterit|mood=indicative|ending=ar|llevar}}
+# DID: llevaron: {{es-verb form of|person=third-person|number=plural|tense=preterit|mood=indicative|ending=ar|llevar}}
 
 # TODO: Verb 2, Noun 2, etc. According to the Entry Layout, this is actually disallowed:
 """

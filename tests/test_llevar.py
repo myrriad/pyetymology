@@ -9,6 +9,7 @@ from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology import wikt_api as wx
+from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
 
@@ -81,6 +82,17 @@ class TestLlevar:
         v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
             (list2 := (list(wx.sections_by_lang(dom, "Catalan")), "arbitrary#Catalan", "arbitrary", "Catalan"))
         assert v
+
+    def test_auto_lang_failure(self, monkeypatch):
+
+        res, dom = fetch_resdom("llevar", redundance=True)
+        monkeypatch.setattr('builtins.input', lambda _: "English")
+        with pytest.raises(MissingException) as e_info:
+            v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
+                (list2 := (list(wx.sections_by_lang(dom, "Spanish")), "arbitrary#Spanish", "arbitrary", "Spanish"))
+
+        assert e_info.value.G is None
+        assert e_info.value.missing_thing == "language_section"
     def test_graph(self, monkeypatch):
         # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
         query, wres, origin = fetch_query("llevar", "Spanish")
