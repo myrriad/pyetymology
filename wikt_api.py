@@ -80,6 +80,7 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat
 
             if antiredundance: # if we're antiredundance,
                 # substring our string to cut out the children, which automatically come packaged with the parent
+                # TODO: possible injection
                 try:
                     added = sec[:str(sec).index(childprefix)]
                 except ValueError:
@@ -179,11 +180,11 @@ def contains_originator(G: nx.Graph, origin: Originator):
 colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
 
-def wikitextparse(wikitext: str) -> Tuple[Wikicode, List[Wikicode]]:
+def wikitextparse(wikitext: str, redundance=True) -> Tuple[Wikicode, List[Wikicode]]:
     res = mwp.parse(wikitext)  # type: Wikicode
     # res = wtp.parse(wikitext)
 
-    dom = res.get_sections()
+    dom = res.get_sections(flat=not redundance)
 
     return res, dom
 
@@ -391,8 +392,7 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
     return G
 
 
-
-def query(me, mimic_input=None):
+def query(me, mimic_input=None, redundance=True):
     if not me:
 
         me = input("Enter a query: " + me)
@@ -437,7 +437,7 @@ def query(me, mimic_input=None):
         raise Exception("Response malformed!" + str(jsn))
     # print(wikitext)
 
-    res, dom = wikitextparse(wikitext)
+    res, dom = wikitextparse(wikitext, redundance=redundance)
     # Here was the lang detection
 
     dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
