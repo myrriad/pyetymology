@@ -11,7 +11,7 @@ These diacritics will automatically be stripped out in a language-specific fashi
 # TODO: wicked, learned, vino#Spanish etc.: When a lemma form AND an etymology exists, but they're for different definitions
 # TODO: display convenience definitions
 # TODO: display not-ancestral etymology, ie. cognates
-# TODO: currently, each wikicode prints recursively and so there's a lot of redundance
+# DID: currently, each wikicode prints recursively and so there's a lot of redundance (fixed with redundance=False default for query())
 
 # TODO: Deprecated testing https://en.wiktionary.org/wiki/Category:Pages_using_deprecated_templates
 

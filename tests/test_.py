@@ -21,7 +21,7 @@ def fetch_wikitext(topic):
         print('Asset not found! Creating...')
         query, wikiresponse, origin, _, _ = wx.query(topic)
         me, word, lang, def_id = query
-        _, wikitext, dom = wikiresponse
+        _, wikitext, _ = wikiresponse
         with open("wtxt_" + topic + ".txt", "w+", encoding="utf-8") as f2:
             f2.write(wikitext)
         return wikitext
@@ -77,7 +77,7 @@ class Test:
         assert not wx.has_exact_prefix("===Etymology===", "==")
     def test_fetch(self):
         q1 = fetch_query("adelante", "Spanish")
-        q2 = wx.query("adelante#Spanish")
+        q2 = wx.query("adelante#Spanish", redundance=True)
         query1, wres1, o1 = q1
         query2, wres2, o2, _, _ = q2
         assert query1 == query2

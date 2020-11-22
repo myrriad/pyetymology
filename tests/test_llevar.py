@@ -85,6 +85,7 @@ class TestLlevar:
         query, wres, origin = fetch_query("llevar", "Spanish")
         _, wtxt, dom = wres
         wres = None, wtxt, dom
+        # TODO: investigate the effect of flattening on this line
         G, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
         G2 = nx.DiGraph()
         nx.add_path(G2, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', 'llevar#Spanish$0'])

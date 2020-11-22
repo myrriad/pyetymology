@@ -392,7 +392,7 @@ def _parse_and_graph(query, wikiresponse, origin, replacement_origin, make_menti
     return G
 
 
-def query(me, mimic_input=None, redundance=True):
+def query(me, mimic_input=None, redundance=False):
     if not me:
 
         me = input("Enter a query: " + me)
