@@ -71,6 +71,26 @@ def fetch_resdom(topic, redundance=False):
     res, dom = wx.wikitextparse(wt, redundance=redundance)
     return res, dom
 
+def are_graphs_equal(G, G__repr):
+    assert nx.is_isomorphic(G, G__repr)
+
+    assert set([repr(s) for s in G.nodes]) == set([s for s in G__repr.nodes])  # nx usually reverses the nodes, probably b/c of nx.add_path
+    assert set((repr(l), repr(r)) for l, r in G.edges) == set(e for e in G__repr.edges)
+    return True # if there hasn't been an assertion error
+
+class MockInput:
+    def __init__(self, inputs: List[str]):
+        self.inputs = inputs
+        self.idx = 0
+    def next(self):
+        if self.idx >= len(self.inputs):
+            raise Exception(f"Not enough mock inputs supplied! The function called {self.idx+1} user inputs, but only {self.inputs} was supplied!")
+        self.idx += 1
+def patch_multiple_input(monkeypatch, inputs: List[str]):
+    mock_input = MockInput(inputs)
+    monkeypatch.setattr('builtins.input', lambda _: mock_input.next())
+
+
 class Test:
     def test_exact_prefix(self):
         assert wx.has_exact_prefix("==Spanish==", "==")

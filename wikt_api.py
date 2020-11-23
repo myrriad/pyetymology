@@ -125,7 +125,7 @@ def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> G
 
 
 _is_plot_active = False
-def draw_graph(G, origin, simple=False):
+def draw_graph(G, origin=None, simple=False):
     print("...drawing graph...")
 
     if simple:

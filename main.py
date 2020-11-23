@@ -21,7 +21,7 @@ ety.draw_graph(GG, origin)
 _ = [print(x) for x in GG.nodes]
 while not original_query: # if original query is "", then keep repeating it
     assert True
-    _query = ety.query(original_query) # parse the query
+    _query = ety.query("") # ask for another query from the user
     _, _, query_origin, _, _ = _query # extract from origin of query from variable scope dump
     GG_origin = ety.contains_originator(GG, query_origin)
     # We want to connect these two graphs,

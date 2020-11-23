@@ -69,3 +69,5 @@ Note that in the case of multiple etymologies,
 all subordinate headers need to have their levels increased by 1 in order 
 to comply with the fundamental concept of showing dependence through nesting.
 """
+
+# TODO: llevar#Spanish contains entry levō, but querying levō fails.
