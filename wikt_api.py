@@ -19,7 +19,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import pyetymology.etyobjects
-from pyetymology import simple_sugi
+from pyetymology import simple_sugi, lexer
 import pyetymology.langcode as langcode
 
 ### START helper_api.py
@@ -185,9 +185,7 @@ colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     res = mwp.parse(wikitext)  # type: Wikicode
     # res = wtp.parse(wikitext)
-
     dom = res.get_sections(flat=not redundance)
-
     return res, dom
 
 
@@ -252,19 +250,20 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
     # by a preexisting node that was already colored
     # therefore we should not colorize it
 
-    for sec in sections:
-
+    entries = lexer.lex(dom)
+    if def_id is None and entries.is_multi_ety:
+        def_id = input("Multiple definitions detected. Enter an ID: ")
+        if def_id == "":
+            def_id = 1
+    # for sec in sections:
+    for entry in entries.entries:
+        # TODO: sec[0] MUST be a level 3 header: ie. ===Verb===
+        # TODO: sec is a list of headers under or equal to level 3; for example [===Pronunciation===bleh] or [===Verb===\n\n====Conjugation====]
         # TODO: All parts of speech at https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
-        if (sec[0].startswith("===Etymology") and not sec[0].startswith("===Etymology===")) \
-                or (sec[0].startswith("===Verb") and not sec[0].startswith("===Verb===")):
-            # Therefore, if it starts with something like ===Etymology 1===
-            if def_id is None:
-                def_id = input("Multiple definitions detected. Enter an ID: ")
-                if def_id == "":
-                    def_id = 1
+        sec = entry.main_sec
 
-        # TODO: https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
-        if sec[0].startswith("===Verb===") or sec[0].startswith(f"===Verb {def_id}"):
+        #if sec.startswith("===Verb===") or sec.startswith(f"===Verb {def_id}"):
+        if entry.entry_type == "Lemma POS":
             # LEMMA https://en.wiktionary.org/wiki/Category:Form-of_templates
             # https://en.wiktionary.org/wiki/Module:form_of/data
             # Wiktionary templates: https://en.wiktionary.org/wiki/Category:Template_interface_modules
@@ -272,10 +271,10 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
             # ^^ Note: Capitals are displayed before lowercase
             # Note: spaces are replaced with underlines in urls
 
-            for subsec in sections_by_level(sec, 4):
+            for subsec in sections_by_level(entry.subordinates, 4):
 
                 lemma_rels = []
-                for node in sec[0].ifilter(recursive=False):
+                for node in sec.ifilter(recursive=False):
                     if isinstance(node, mwp.wikicode.Template):
                         node: mwp.wikicode.Template
                         templ_name = node.name
@@ -304,7 +303,14 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
             # lemma_flag = True
 
 
-        if sec[0].startswith("===Etymology===") or sec[0].startswith(f"===Etymology {def_id}"):
+        # if sec.startswith("===Etymology===") or sec.startswith(f"===Etymology {def_id}"):
+        if entry.entry_type == "Etymology":
+            assert entries.is_multi_ety == (entry.idx is not None)
+            # if multi_ety, then the idx should not be None
+            # and vice versa: if single ety, then idx should be None
+            if not (entry.idx is None or entry.idx == int(def_id)): # if either there's no idx, or the idx matches, continue
+                break
+
             if not ety_flag:
                 ety_flag = True
             else:
@@ -316,7 +322,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
 
             dotyet = False
             firstsentence = []
-            for node in sec[0].ifilter(recursive=False):  # type: mwp.wikicode.Node
+            for node in sec.ifilter(recursive=False):  # type: mwp.wikicode.Node
                 # .filter_templates(): #type: mwp.wikicode.Template
                 # if etytemp
 
