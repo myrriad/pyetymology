@@ -55,7 +55,6 @@ class Entry:
         self.extras = extras  # type: List[Header]
 
 def lex2(dom: List[Wikicode]) -> List[Entry]:
-    sections = wikt.sections_by_level(dom, 3)
     is_multi_ety = None
 
     ety = None  # type: Header
@@ -63,7 +62,7 @@ def lex2(dom: List[Wikicode]) -> List[Entry]:
     entries = []  # type: List[Entry]
     preety = []
     did_lemma = False
-    for lvl3plus in sections:
+    for lvl3plus in wikt.sections_by_level(dom, 3):
 
         lvl3 = lvl3plus[0]
         if lvl3.startswith("===Etymology"):

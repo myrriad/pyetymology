@@ -1,20 +1,15 @@
-from typing import List
+from typing import List, Tuple
 
 import dill
-
 import networkx as nx
-import networkx.algorithms.isomorphism as iso
-import pytest
-from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology import wikt_api as wx
-from pyetymology.tests import assets, asset_llevar
-import mwparserfromhell as mwp
+
 
 def fetch_wikitext(topic):
     try:
-        with open("wtxt_" + topic + ".txt", encoding="utf-8") as f:
+        with open("assets/wtxt_" + topic + ".txt", encoding="utf-8") as f:
             txt = f.read()
             return txt
     except FileNotFoundError as error:
@@ -22,14 +17,14 @@ def fetch_wikitext(topic):
         query, wikiresponse, origin, _, _ = wx.query(topic)
         me, word, lang, def_id = query
         _, wikitext, _ = wikiresponse
-        with open("wtxt_" + topic + ".txt", "w+", encoding="utf-8") as f2:
+        with open("assets/wtxt_" + topic + ".txt", "w+", encoding="utf-8") as f2:
             f2.write(wikitext)
         return wikitext
 
 def fetch_query(topic: str, lang: str):
     # monkeypatch.setattr('builtins.input', lambda _: lang)
     try:
-        with open("query_" + topic + "_" + lang + ".txt", 'rb') as f:
+        with open("assets/query_" + topic + "_" + lang + ".txt", 'rb') as f:
             pickleme = dill.load(f)
             query, wikiresponse, origin = pickleme
             _, wikitext, dom = wikiresponse
@@ -52,7 +47,7 @@ def fetch_query(topic: str, lang: str):
         _, wikitext, dom = wikiresponse
         wikiresponse = None, str(wikitext), str(dom)
         pickleme = query, wikiresponse, origin
-        with open("query_" + topic + "_" + lang + ".txt", "wb") as output:
+        with open("assets/query_" + topic + "_" + lang + ".txt", "wb") as output:
             dill.dump(pickleme, output, dill.HIGHEST_PROTOCOL)
 
         """
@@ -66,7 +61,7 @@ def fetch_query(topic: str, lang: str):
         dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
         wikiresponse = None, res, dom
         return query, wikiresponse, origin
-def fetch_resdom(topic, redundance=False):
+def fetch_resdom(topic, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     wt = fetch_wikitext(topic)
     res, dom = wx.wikitextparse(wt, redundance=redundance)
     return res, dom
@@ -95,8 +90,11 @@ class Test:
     def test_exact_prefix(self):
         assert wx.has_exact_prefix("==Spanish==", "==")
         assert not wx.has_exact_prefix("===Etymology===", "==")
+    def test_null_sections_by_level(self):
+        dom = fetch_resdom("llevar")[1]
+        assert list(wx.sections_by_level(dom, 6)) == []
     def test_fetch(self):
-        return # don't make too many API queries
+        return  # don't make too many API queries
         q1 = fetch_query("adelante", "Spanish")
         q2 = wx.query("adelante#Spanish", redundance=True)
         query1, wres1, o1 = q1
