@@ -2,6 +2,15 @@ import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+from pyetymology import wikt_api
+from pyetymology.tests import test_llevar
+
+
+G_llevar = test_llevar.G_llevar
+wikt_api.draw_graph(G_llevar)
+
+exit(0)
 x=0
 for i in range(10):
     x=x+0.04

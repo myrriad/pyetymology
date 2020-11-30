@@ -29,6 +29,7 @@ import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology.etyobjects import EtyRelation, Originator, LemmaRelation, MissingException
+from pyetymology.lexer import Header
 
 
 def input(__prompt: Any) -> str:
@@ -80,14 +81,6 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat
                 in_section = True # don't yield if we're just starting out, as it will be empty
 
             # Antiredundance removed b/c of possible injection; plus, there's a better way of making mwp return it flat in query()
-            # with query(redundance=False)
-
-            # if antiredundance:
-            #    try:
-            #        added = sec[:str(sec).index(childprefix)]
-            #    except ValueError:
-            #        added = sec
-
             added = sec
             builder = [added]  # start building
             continue
@@ -99,7 +92,8 @@ def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat
             continue
         break # we're in section, but it's neither a child nor a sibling, therefore it's a parent and we should exit.
 
-    yield yieldme(builder) # yield stragglers
+    if builder:
+        yield yieldme(builder) # yield stragglers
 
 
 def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikicode, None, None]:
@@ -125,7 +119,7 @@ def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> G
 
 
 _is_plot_active = False
-def draw_graph(G, origin=None, simple=False):
+def draw_graph(G, simple=False):
     print("...drawing graph...")
 
     if simple:
@@ -144,7 +138,10 @@ def draw_graph(G, origin=None, simple=False):
         poses = {v.data: (-v.view.xy[0], -v.view.xy[1]) for v in g.C[0].sV}
 
     node_colors = nx.get_node_attributes(G, 'color')
-    nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
+    if node_colors:
+        nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
+    else:
+        nx.draw(G, pos=poses, with_labels=True)
     # x.draw_networkx_edges(G, pos=poses)
 
     # plt.show()
@@ -230,9 +227,6 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
 
     ety_flag = False
     lemma_flag = False
-    sections = sections_by_level(dom, 3)
-
-
 
     def add_node(G, node, color_id=None):
         if color_id is None:
@@ -250,150 +244,127 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
     # by a preexisting node that was already colored
     # therefore we should not colorize it
 
-    entries = lexer.lex(dom)
-    if def_id is None and entries.is_multi_ety:
+    entries = lexer.lex2(dom)  #type: List[Entry]
+    if def_id is None and len(entries) > 1:
         def_id = input("Multiple definitions detected. Enter an ID: ")
         if def_id == "":
             def_id = 1
-    # for sec in sections:
-    for entry in entries.entries:
-        # TODO: sec[0] MUST be a level 3 header: ie. ===Verb===
-        # TODO: sec is a list of headers under or equal to level 3; for example [===Pronunciation===bleh] or [===Verb===\n\n====Conjugation====]
-        # TODO: All parts of speech at https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
-        sec = entry.main_sec
-
-        #if sec.startswith("===Verb===") or sec.startswith(f"===Verb {def_id}"):
-        if entry.entry_type == "Lemma POS":
-            # LEMMA https://en.wiktionary.org/wiki/Category:Form-of_templates
-            # https://en.wiktionary.org/wiki/Module:form_of/data
-            # Wiktionary templates: https://en.wiktionary.org/wiki/Category:Template_interface_modules
-            # all templates: https://en.wiktionary.org/wiki/Special:AllPages?from=&to=&namespace=10
-            # ^^ Note: Capitals are displayed before lowercase
-            # Note: spaces are replaced with underlines in urls
-
-            for subsec in sections_by_level(entry.subordinates, 4):
-
-                lemma_rels = []
-                for node in sec.ifilter(recursive=False):
-                    if isinstance(node, mwp.wikicode.Template):
-                        node: mwp.wikicode.Template
-                        templ_name = node.name
-                        if templ_name[-3:] == " of":
-                            if ety_flag:
-                                raise Exception("both Ety and Lemma are being parsed?")
-                            #lang = node.params[0]
-                            # word = node.params[1]
-                            # print(f"Found lemma?: lang: {lang} word: {word}")
-                            lemma_rel = LemmaRelation(origin, node)
-                            # print("-"+repr(subsec))
-                            lemma_flag = True
-
-                            if not any(lemma_rel.matches(x) for x in lemma_rels): # if it doesn't match any
-                                lemma_rels.append(lemma_rel)
-                                # Start graphing
-                                add_node(G, lemma_rel)
-                                if prev:
-                                    G.add_edge(lemma_rel, prev)
-                                    # prev = lemma_rel
+        entry = entries[int(def_id) - 1] # wiktionary is 1-indexed, but our lists are 0-indexed
+    # for entry in entries.entrylist:
+    else:
+        entry = entries[0]
+    # sec = entry.main_sec
 
 
-
-            # Basic methodology: detect if a template ends in " of", such as "past participle of"
-
-            # lemma_flag = True
-
-
-        # if sec.startswith("===Etymology===") or sec.startswith(f"===Etymology {def_id}"):
-        if entry.entry_type == "Etymology":
-            assert entries.is_multi_ety == (entry.idx is not None)
-            # if multi_ety, then the idx should not be None
-            # and vice versa: if single ety, then idx should be None
-            if not (entry.idx is None or entry.idx == int(def_id)): # if either there's no idx, or the idx matches, continue
-                break
-
-            if not ety_flag:
-                ety_flag = True
-            else:
-                raise Exception("Etymology is being parsed twice? ")
-            if lemma_flag:
-                raise Exception("Both Lemma and Ety are being parsed?")
-            # for node in sec[0].ifilter_templates(): #type: mwp.wikicode.Template
-            # sec[0].remove(node)
-
-            dotyet = False
-            firstsentence = []
-            for node in sec.ifilter(recursive=False):  # type: mwp.wikicode.Node
-                # .filter_templates(): #type: mwp.wikicode.Template
-                # if etytemp
-
-                if isinstance(node, mwp.wikicode.Template):
-                    etyr = EtyRelation(origin, node)
-                    # print(str(etyr))
-                    if not dotyet:
-                        firstsentence.append(etyr)
-
-                else:
-                    # print(str(node))
-                    if not dotyet:  # if we're in the first sentence
-                        if isinstance(node, mwparserfromhell.wikicode.Text) and "." in node:  # if we reach the end
-                            firstsentence.append(
-                                node[:node.index(".") + 1])  # get everything up to, and including, the period
-                            dotyet = True
-                        else:
-                            firstsentence.append(
-                                node)  # if we haven't reached the period, we're in the middle. capture that node
-
-            print("1st sentence is " + repr(firstsentence))
-            ancestry = []
-
-            # prev = origin
-            # start graphing
-
-            between_text = []
-
-            check_type = False
-            cache = Cache(4)
-            for token in firstsentence:  # time to analyze the immediate etymology ("ancestry")
-                if token is None:
-                    continue
-                if isinstance(token, EtyRelation):
-                    token: EtyRelation
-                    cache.put(token)
-
-                    if any(is_in(token.rtype, x) for x in
-                           (EtyRelation.ety_abbrs, EtyRelation.aff_abbrs,
-                            EtyRelation.sim_abbrs)):
-                        # inh, der, bor, m
-                        if any("+" in s for s in
-                               between_text):  # or helper_api.is_in(token.rtype, helper_api.EtyRelation.aff_abbrs):
-                            prevs_parents = G.edges(nbunch=prev)  #
-                            parnt = next(iter(prevs_parents), (None, None))[1]
-                            # parnt = prev2
-                            add_node(G, token)
-                            G.add_edge(token, parnt)
-
-                            # sister node
-                        else:
-                            add_node(G, token)
-                            if prev:
-                                G.add_edge(token, prev)
-                        if make_mentions_sideways and is_in(token.rtype, EtyRelation.sim_abbrs):
-                            pass # if a mention
-                        else:
-                            prev = token
-                    else:
-                        print(token)
-                    between_text = []
-                else:
-                    between_text.append(token)
-
-            # yield G
+    # if sec.startswith("===Etymology===") or sec.startswith(f"===Etymology {def_id}"):
+    # if entry.entry_type == "Etymology":
+    ety = entry.ety #type: Header
+    if ety:
+        assert (len(entries) > 1) == (ety.idx is not None)
+        # if multi_ety, then the idx should not be None
+        # and vice versa: if single ety, then idx should be None
+        assert ety.idx is None or ety.idx == int(def_id)  # if either there's no idx, or the idx matches, continue
+        if not ety_flag:
+            ety_flag = True
         else:
-            pass  # print(repr(sec))
+            raise Exception("Etymology is being parsed twice? This should be impossible")
+
+        dotyet = False
+        firstsentence = []
+        for node in ety.wikicode.ifilter(recursive=False):  # type: mwp.wikicode.Node
+            # .filter_templates(): #type: mwp.wikicode.Template
+            # if etytemp
+
+            if isinstance(node, mwp.wikicode.Template):
+                etyr = EtyRelation(origin, node)
+                # print(str(etyr))
+                if not dotyet:
+                    firstsentence.append(etyr)
+
+            else:
+                # print(str(node))
+                if not dotyet:  # if we're in the first sentence
+                    if isinstance(node, mwparserfromhell.wikicode.Text) and "." in node:  # if we reach the end
+                        firstsentence.append(
+                            node[:node.index(".") + 1])  # get everything up to, and including, the period
+                        dotyet = True
+                    else:
+                        firstsentence.append(
+                            node)  # if we haven't reached the period, we're in the middle. capture that node
+
+        print("1st sentence is " + repr(firstsentence))
+        ancestry = []
+        # prev = origin
+        # start graphing
+        between_text = []
+        cache = Cache(4)
+        for token in firstsentence:  # time to analyze the immediate etymology ("ancestry")
+            if token is None:
+                continue
+            if isinstance(token, EtyRelation):
+                token: EtyRelation
+                cache.put(token)
+
+                if any(is_in(token.rtype, x) for x in
+                       (EtyRelation.ety_abbrs, EtyRelation.aff_abbrs,
+                        EtyRelation.sim_abbrs)):
+                    # inh, der, bor, m
+                    if any("+" in s for s in
+                           between_text):  # or helper_api.is_in(token.rtype, helper_api.EtyRelation.aff_abbrs):
+                        prevs_parents = G.edges(nbunch=prev)  #
+                        parnt = next(iter(prevs_parents), (None, None))[1]
+                        # parnt = prev2
+                        add_node(G, token)
+                        G.add_edge(token, parnt)
+
+                        # sister node
+                    else:
+                        add_node(G, token)
+                        if prev:
+                            G.add_edge(token, prev)
+                    if make_mentions_sideways and is_in(token.rtype, EtyRelation.sim_abbrs):
+                        pass # if a mention
+                    else:
+                        prev = token
+                else:
+                    print(token)
+                between_text = []
+            else:
+                between_text.append(token)
+    #if sec.startswith("===Verb===") or sec.startswith(f"===Verb {def_id}"):
+    # for subsec in sections_by_level(entry.subordinates, 4):
+    for defn in entry.extras:  # type: Header
+        assert defn is None or isinstance(defn, Header)
+        if defn.metainfo != "Definition":
+            continue
+        lemma_rels = []
+        for node in defn.wikicode.ifilter(recursive=False):
+            if isinstance(node, mwp.wikicode.Template):
+                node: mwp.wikicode.Template
+                templ_name = node.name
+                if templ_name[-3:] == " of":
+                    if ety_flag:
+                        raise Exception("both Ety and Lemma are being parsed?")
+                    #lang = node.params[0]
+                    # word = node.params[1]
+                    # print(f"Found lemma?: lang: {lang} word: {word}")
+                    lemma_rel = LemmaRelation(origin, node)
+                    # print("-"+repr(subsec))
+                    lemma_flag = True
+
+                    if not any(lemma_rel.matches(x) for x in lemma_rels): # if it doesn't match any
+                        lemma_rels.append(lemma_rel)
+                        # Start graphing
+                        add_node(G, lemma_rel)
+                        if prev:
+                            G.add_edge(lemma_rel, prev)
+                            # prev = lemma_rel
+        # Basic methodology: detect if a template ends in " of", such as "past participle of"
+        # lemma_flag = True
+
     if not ety_flag:
         if lemma_flag:
-            pass
-            # raise MissingException("Definition detected, but etymology not detected. (Perhaps it's lemmatized?)", missing_thing="etymology")
+            pass  # raise MissingException("Definition detected, but etymology not detected. (Perhaps it's lemmatized?)", missing_thing="etymology")
         else:
             raise MissingException("Neither definition nor etymology detected.", missing_thing="definition", G=G)
     return G

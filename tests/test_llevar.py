@@ -160,7 +160,7 @@ class TestLlevar:
             G_composed = nx.DiGraph()
             nx.add_path(G_composed, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}', 'llevaron#Spanish$0'])
 
-            # wx.draw_graph(G_composed)
+            # wx.draw_graph(G_composed) # DID: this fails. Why? Answer: blank node_colors.
             # wx.draw_graph(GG2)
             assert True
             assert are_graphs_equal(GG2, G_composed)

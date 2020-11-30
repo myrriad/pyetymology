@@ -9,7 +9,11 @@ These diacritics will automatically be stripped out in a language-specific fashi
 
 # TODO: https://en.wiktionary.org/wiki/Wiktionary:Entry_layout#:~:text=Parts%20of%20speech
 # TODO: wicked, learned, vino#Spanish etc.: When a lemma form AND an etymology exists, but they're for different definitions
-# TODO: display convenience definitions
+# TODO: display convenience definitions.
+    # if the etymology is a multi-ety,  then the definitions will simply be the etymology x's subordinates
+    # if the etymology is a single-ety, then its subordinates will be blank, but we know that there is only one total "definition"
+    # so we should expect the definitions to simply be the siblings of the etymology entry
+    # if single-ety, o_entries should be composed of only [etymology, definition1, definition2, ...]
 # TODO: display not-ancestral etymology, ie. cognates
 # DID: currently, each wikicode prints recursively and so there's a lot of redundance (fixed with redundance=False default for query())
 
@@ -71,3 +75,18 @@ to comply with the fundamental concept of showing dependence through nesting.
 """
 
 # TODO: llevar#Spanish contains entry levō, but querying levō fails.
+
+# TODO: origin indexing is broken with lemmas
+
+# TODO: Homograph testing https://www.thoughtco.com/some-spanish-homophones-3080303
+
+# TODO: example of if there are 2 different Noun definitions: https://en.wiktionary.org/wiki/flamenco#Spanish
+
+# LEMMA https://en.wiktionary.org/wiki/Category:Form-of_templates
+# https://en.wiktionary.org/wiki/Module:form_of/data
+# Wiktionary templates: https://en.wiktionary.org/wiki/Category:Template_interface_modules
+# all templates: https://en.wiktionary.org/wiki/Special:AllPages?from=&to=&namespace=10
+# ^^ Note: Capitals are displayed before lowercase
+# Note: spaces are replaced with underlines in urls
+
+# TODO: remove duplicate templates if they're the same
