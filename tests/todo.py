@@ -1,4 +1,4 @@
-# TODO: Diacritic strip out. See
+# TODO: Diacritic strip out. See plicō. See
 """
 https://en.wiktionary.org/wiki/Template:present_participle_of
 |2= (required)
@@ -90,3 +90,11 @@ to comply with the fundamental concept of showing dependence through nesting.
 # Note: spaces are replaced with underlines in urls
 
 # TODO: remove duplicate templates if they're the same
+
+# TODO: proper querying for reconstructed languages
+
+# TODO: proper querying and connecting with Latin macrons; ie. plicō, which must be queried by "plico"
+
+
+# DID: test_.fetch_query() and wikt_api.query() have different footprints
+# DID: fetch_query() doesn't return the last 2 values of query()

@@ -119,7 +119,7 @@ def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> G
 
 
 _is_plot_active = False
-def draw_graph(G, simple=False):
+def draw_graph(G, simple=False, pause=False):
     print("...drawing graph...")
 
     if simple:
@@ -144,9 +144,11 @@ def draw_graph(G, simple=False):
         nx.draw(G, pos=poses, with_labels=True)
     # x.draw_networkx_edges(G, pos=poses)
 
-    # plt.show()
-    # plt.pause(0.01) pauses for 0.01s, and runs plt's GUI main loop
-    plt.pause(0.01)
+    if pause:
+        plt.show()
+    else:
+        # plt.pause(0.01) pauses for 0.01s, and runs plt's GUI main loop
+        plt.pause(0.01)
     global _is_plot_active
     _is_plot_active = True
 
@@ -368,7 +370,10 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
         else:
             raise MissingException("Neither definition nor etymology detected.", missing_thing="definition", G=G)
     return G
-def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
+# def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
+def graph(bigquery, replacement_origin=None):
+    query, wikiresponse, origin, exception_info = bigquery
+    src, word_urlify = exception_info
     try:
         G = parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)
     except MissingException as e:
@@ -416,6 +421,7 @@ def query(me, mimic_input=None, redundance=False):
         global session
         res = session.get(src)
 
+
         #cache res
         with open('response.pkl', 'wb') as output:
             pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
@@ -447,5 +453,6 @@ def query(me, mimic_input=None, redundance=False):
     query = (me, word, lang, def_id)
     wikiresponse = (res, wikitext, dom)
     origin = Originator(me)
-    return query, wikiresponse, origin, src, word_urlify
+    exception_info = (src, word_urlify)
+    return query, wikiresponse, origin, exception_info
 

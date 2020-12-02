@@ -13,7 +13,7 @@ from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
 
-from pyetymology.tests.test_ import fetch_resdom, fetch_query, fetch_wikitext, are_graphs_equal, patch_multiple_input
+from pyetymology.tests.test_ import fetch_resdom, fetch_query, fetch_wikitext, is_eq__repr, patch_multiple_input
 
 
 G_llevaron = nx.DiGraph()
@@ -55,7 +55,7 @@ class TestLlevar:
 
     def test_section_detect(self):
         res, dom = fetch_resdom("llevar", redundance=True)
-        secs = list(wx.sections_by_level(dom, 3))
+        secs = list(wx.sections_by_level(dom, 3)) # this is catalan
         assert secs == [['===Etymology===\nFrom {{inh|ca|la|levāre}}, present active infinitive of {{m|la|levō}}.\n\n'],
                         ['===Pronunciation===\n* {{ca-IPA}}\n\n'],
                         ['===Verb===\n{{ca-verb}}\n\n# to [[remove]], to [[take out]]\n\n====Conjugation====\n{{ca-conj-ar|llev}}\n\n====Derived terms====\n* {{l|ca|llevaneu}}\n* {{l|ca|llevar-se}}\n\n',
@@ -102,9 +102,8 @@ class TestLlevar:
 
     def test_graph(self, monkeypatch):
         # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
-        query, wres, origin = fetch_query("llevar", "Spanish")
-        # TODO: investigate the effect of flattening on this line
-        G, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
+        fetched_q = fetch_query("llevar", "Spanish")
+        G, origin = wx.graph(fetched_q)
         global G_llevar
         G2 = G_llevar
         assert nx.is_isomorphic(G, G2)
@@ -116,8 +115,8 @@ class TestLlevar:
     # nodes: [llevar#Spanish$0, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 
     def test_lemma_llevaron(self):
-        query, wres, origin = fetch_query("llevaron", "Spanish")
-        G, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
+        fetched_q = fetch_query("llevaron", "Spanish")
+        G, origin = wx.graph(fetched_q)
         global G_llevaron
         G2 = G_llevaron # this is the repr() version of each node
         assert nx.is_isomorphic(G, G2)
@@ -125,35 +124,40 @@ class TestLlevar:
         assert [repr(s) for s in G.nodes] == [s for s in reversed(list(G2.nodes))] # nx reversed the nodes for some reason
         assert [(repr(l), repr(r)) for l, r in G.edges] == [e for e in reversed(list(G2.edges))]
 
+    def test_not_equal(self):
+        fetched_q = fetch_query("llevaron", "Spanish")
+        Llevaron, origin = wx.graph(fetched_q)
+
+        fetched_q = fetch_query("llevar", "Spanish")
+        Llevar, origin = wx.graph(fetched_q)
+
+        assert not nx.is_isomorphic(Llevar, Llevaron)
+
     def test_connection(self, monkeypatch):
         # patch_multiple_input(monkeypatch, ["llevaron, llevar"]) # TODO: this actually isn't used
 
         fetched_query = fetch_query("llevaron", "Spanish")
-        fetched_query = (*fetched_query, "test-temp-1", "test-temp-2")
-        GG, origin = wx.graph(*fetched_query)
+        GG, origin = wx.graph(fetched_query)
         # wx.draw_graph(GG, origin)
         # _ = [print(x) for x in GG.nodes]
         #while not original_query:  # if original query is "", then keep repeating it
         #    assert True
         if True:
             _query = fetch_query("llevar", "Spanish") # accept one input
-            _query = *_query, "ooga", "booga" # TODO: fetch_query() doesn't return the last 2 values of query()
-            _, _, query_origin, _, _ = _query  # extract from origin of query from variable scope dump.
-            # TODO: fetch_query() and query() have different footprints
-            # TODO: fetch_query() doesn't return the last 2 values of query()
+            _, _, query_origin, _ = _query  # extract from origin of query from variable scope dump.
             GG_origin = wx.contains_originator(GG, query_origin)
 
             # See main.py on connection
-            G, origin = wx.graph(*_query, replacement_origin=GG_origin)
+            G, origin = wx.graph(_query, replacement_origin=GG_origin)
             # ety.draw_graph(G, origin)
             assert GG_origin # llevaron should contain llevar
 
             global G_llevaron
-            assert are_graphs_equal(GG, G_llevaron)
+            assert is_eq__repr(GG, G_llevaron)
 
             G_llevar_with_rorigin = nx.DiGraph()
             nx.add_path(G_llevar_with_rorigin, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}'])
-            assert are_graphs_equal(G, G_llevar_with_rorigin)
+            assert is_eq__repr(G, G_llevar_with_rorigin)
 
             # fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
             GG2 = nx.compose(GG, G)
@@ -163,7 +167,7 @@ class TestLlevar:
             # wx.draw_graph(G_composed) # DID: this fails. Why? Answer: blank node_colors.
             # wx.draw_graph(GG2)
             assert True
-            assert are_graphs_equal(GG2, G_composed)
+            assert is_eq__repr(GG2, G_composed)
             # TODO: origin indexing is broken with lemmas
 # [$0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 # GG2.nodes [llevaron#Spanish$0, $0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]

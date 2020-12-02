@@ -14,7 +14,7 @@ def fetch_wikitext(topic):
             return txt
     except FileNotFoundError as error:
         print('Asset not found! Creating...')
-        query, wikiresponse, origin, _, _ = wx.query(topic)
+        query, wikiresponse, origin, _ = wx.query(topic)
         me, word, lang, def_id = query
         _, wikitext, _ = wikiresponse
         with open("assets/wtxt_" + topic + ".txt", "w+", encoding="utf-8") as f2:
@@ -23,6 +23,7 @@ def fetch_wikitext(topic):
 
 def fetch_query(topic: str, lang: str):
     # monkeypatch.setattr('builtins.input', lambda _: lang)
+    exception_info = ("unpickled-exceptiontxt1", "unpickled-exceptiontxt2")
     try:
         with open("assets/query_" + topic + "_" + lang + ".txt", 'rb') as f:
             pickleme = dill.load(f)
@@ -35,15 +36,16 @@ def fetch_query(topic: str, lang: str):
             res, dom = wikitextparse(wikitext)
 
             dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
+            The following mimics the function auto_lang()
             """
             res, dom = wx.wikitextparse(wikitext, redundance=True)
             dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
 
             wikiresponse = None, res, dom
-            return query, wikiresponse, origin
+            return query, wikiresponse, origin, exception_info
     except FileNotFoundError as error:
         print('Asset not found! Creating...')
-        query, wikiresponse, origin, _, _ = wx.query(topic, mimic_input=lang)
+        query, wikiresponse, origin, _ = wx.query(topic, mimic_input=lang)
         _, wikitext, dom = wikiresponse
         wikiresponse = None, str(wikitext), str(dom)
         pickleme = query, wikiresponse, origin
@@ -60,17 +62,24 @@ def fetch_query(topic: str, lang: str):
         res, dom = wx.wikitextparse(wikitext, redundance=True)
         dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
         wikiresponse = None, res, dom
-        return query, wikiresponse, origin
+        return query, wikiresponse, origin, exception_info
 def fetch_resdom(topic, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     wt = fetch_wikitext(topic)
     res, dom = wx.wikitextparse(wt, redundance=redundance)
     return res, dom
 
-def are_graphs_equal(G, G__repr):
+def is_eq__repr(G, G__repr):
     assert nx.is_isomorphic(G, G__repr)
 
     assert set([repr(s) for s in G.nodes]) == set([s for s in G__repr.nodes])  # nx usually reverses the nodes, probably b/c of nx.add_path
     assert set((repr(l), repr(r)) for l, r in G.edges) == set(e for e in G__repr.edges)
+    return True # if there hasn't been an assertion error
+
+def is_eq__str(G, G__str):
+    assert nx.is_isomorphic(G, G__str)
+
+    assert set([str(s) for s in G.nodes]) == set([s for s in G__str.nodes])  # nx usually reverses the nodes, probably b/c of nx.add_path
+    assert set((str(l), str(r)) for l, r in G.edges) == set(e for e in G__str.edges)
     return True # if there hasn't been an assertion error
 
 class MockInput:
@@ -97,8 +106,8 @@ class Test:
         return  # don't make too many API queries
         q1 = fetch_query("adelante", "Spanish")
         q2 = wx.query("adelante#Spanish", redundance=True)
-        query1, wres1, o1 = q1
-        query2, wres2, o2, _, _ = q2
+        query1, wres1, o1, _ = q1
+        query2, wres2, o2, _ = q2
         assert query1 == query2
         assert str(o1) == str(o2)
         _, wtxt1, dom1 = wres1

@@ -17,9 +17,9 @@ from pyetymology.tests.test_ import fetch_resdom, fetch_query
 
 class TestStatt:
     def test_missing_definition_graph(self):
-        query, wres, origin = fetch_query("statt", "German")
+        fetched_q = fetch_query("statt", "German")
         # TODO: investigate the effect of flattening on this line
-        G, origin = wx.graph(query, wres, origin, "test-temp-1", "test-temp-2")
+        G, origin = wx.graph(fetched_q)
         G2 = nx.DiGraph()
         G2.add_node(origin)
         assert nx.is_isomorphic(G, G2)

@@ -16,19 +16,19 @@ from pyetymology.etyobjects import Originator
 original_query = "" #lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#Spanish"#"Reconstruction:Proto-Italic/feiljos#"
 
 
-GG, origin = ety.graph(*ety.query(original_query))
+GG, origin = ety.graph(ety.query(original_query))
 ety.draw_graph(GG)
 _ = [print(x) for x in GG.nodes]
 while not original_query: # if original query is "", then keep repeating it
     assert True
     _query = ety.query("") # ask for another query from the user
-    _, _, query_origin, _, _ = _query # extract from origin of query from variable scope dump
+    _, _, query_origin, _ = _query # extract from origin of query from variable scope dump
     GG_origin = ety.contains_originator(GG, query_origin)
     # We want to connect these two graphs,
     # so we take our query's origin and try to find
     # a node from our big, working tree GG.
 
-    G, origin = ety.graph(*_query, replacement_origin=GG_origin)
+    G, origin = ety.graph(_query, replacement_origin=GG_origin)
     ety.draw_graph(G)
 
     if GG_origin:
