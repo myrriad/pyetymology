@@ -119,38 +119,6 @@ def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> G
 
 
 _is_plot_active = False
-def draw_graph(G, simple=False, pause=False):
-    print("...drawing graph...")
-
-    if simple:
-        poses = simple_sugi.pos(G)
-    else:
-        g = grutils.convert_nextworkx_graph_to_grandalf(G)
-        from grandalf.layouts import SugiyamaLayout
-
-        class DefaultView(object):
-            w, h = 10, 10
-
-        for v in g.V(): v.view = DefaultView()
-        sug = SugiyamaLayout(g.C[0])
-        sug.init_all()  # roots=[V[0]]) #, inverted_edges=[V[4].e_to(V[0])])
-        sug.draw()
-        poses = {v.data: (-v.view.xy[0], -v.view.xy[1]) for v in g.C[0].sV}
-
-    node_colors = nx.get_node_attributes(G, 'color')
-    if node_colors:
-        nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
-    else:
-        nx.draw(G, pos=poses, with_labels=True)
-    # x.draw_networkx_edges(G, pos=poses)
-
-    if pause:
-        plt.show()
-    else:
-        # plt.pause(0.01) pauses for 0.01s, and runs plt's GUI main loop
-        plt.pause(0.01)
-    global _is_plot_active
-    _is_plot_active = True
 
 
 def is_in(elem, abbr_set: Dict[str, str]):
@@ -173,12 +141,6 @@ def contains_originator(G: nx.Graph, origin: Originator):
             if node.matches_query(origin.me):
                 return node
     return None
-
-
-### END helper_api.py
-
-
-colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
 
 def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
@@ -220,6 +182,67 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
         raise MissingException(f"Word \"{word}\" has no entry under language {lang}", missing_thing="language_section")
     return lang_secs, me, word, lang
 
+
+def query(me, mimic_input=None, redundance=False):
+    if not me:
+
+        me = input("Enter a query: " + me)
+    terms = me.split("#")
+    def_id = None
+    if len(terms) == 1:
+        word = me
+        # lang = input("Language not detected! Please input one: ")
+        lang = ""
+        # me = word + "#" + lang
+    elif len(terms) == 2:
+        word, lang = terms
+    elif len(terms) == 3:
+        word, lang, def_id = terms
+    else:
+        raise Exception(f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
+
+    word_urlify = urllib.parse.quote_plus(word)
+    src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
+    # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
+
+    if online:
+        global session
+        res = session.get(src)
+
+
+        #cache res
+        with open('response.pkl', 'wb') as output:
+            pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
+    else:
+        with open('response.pkl', 'rb') as _input:
+            res = pickle.load(_input)
+
+    txt = res.text
+    jsn = json.loads(txt) #type: json
+    if "parse" in jsn:
+        wikitext = jsn["parse"]["wikitext"]
+    elif "error" in jsn:
+        print(src)
+        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
+        raise Exception("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]))
+    else:
+        raise Exception("Response malformed!" + str(jsn))
+    # print(wikitext)
+
+    res, dom = wikitextparse(wikitext, redundance=redundance)
+    # Here was the lang detection
+
+    dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
+    assert me
+    assert word
+    assert lang
+    assert len(me.split("#")) >= 2
+
+    query = (me, word, lang, def_id)
+    wikiresponse = (res, wikitext, dom)
+    origin = Originator(me)
+    exception_info = (src, word_urlify)
+    return query, wikiresponse, origin, exception_info
 
 def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_mentions_sideways=False) -> nx.DiGraph:
     me, word, lang, def_id = query
@@ -370,6 +393,8 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
         else:
             raise MissingException("Neither definition nor etymology detected.", missing_thing="definition", G=G)
     return G
+
+
 # def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
 def graph(bigquery, replacement_origin=None):
     query, wikiresponse, origin, exception_info = bigquery
@@ -394,65 +419,37 @@ def graph(bigquery, replacement_origin=None):
     return G, origin
 
 
+colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
-def query(me, mimic_input=None, redundance=False):
-    if not me:
+def draw_graph(G, simple=False, pause=False):
+    print("...drawing graph...")
 
-        me = input("Enter a query: " + me)
-    terms = me.split("#")
-    def_id = None
-    if len(terms) == 1:
-        word = me
-        # lang = input("Language not detected! Please input one: ")
-        lang = ""
-        # me = word + "#" + lang
-    elif len(terms) == 2:
-        word, lang = terms
-    elif len(terms) == 3:
-        word, lang, def_id = terms
+    if simple:
+        poses = simple_sugi.pos(G)
     else:
-        raise Exception(f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
+        g = grutils.convert_nextworkx_graph_to_grandalf(G)
+        from grandalf.layouts import SugiyamaLayout
 
-    word_urlify = urllib.parse.quote_plus(word)
-    src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
+        class DefaultView(object):
+            w, h = 10, 10
 
-    if online:
-        global session
-        res = session.get(src)
+        for v in g.V(): v.view = DefaultView()
+        sug = SugiyamaLayout(g.C[0])
+        sug.init_all()  # roots=[V[0]]) #, inverted_edges=[V[4].e_to(V[0])])
+        sug.draw()
+        poses = {v.data: (-v.view.xy[0], -v.view.xy[1]) for v in g.C[0].sV}
 
-
-        #cache res
-        with open('response.pkl', 'wb') as output:
-            pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
+    node_colors = nx.get_node_attributes(G, 'color')
+    if node_colors:
+        nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
     else:
-        with open('response.pkl', 'rb') as _input:
-            res = pickle.load(_input)
+        nx.draw(G, pos=poses, with_labels=True)
+    # x.draw_networkx_edges(G, pos=poses)
 
-    txt = res.text
-    jsn = json.loads(txt) #type: json
-    if "parse" in jsn:
-        wikitext = jsn["parse"]["wikitext"]
-    elif "error" in jsn:
-        print(src)
-        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
-        raise Exception("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]))
+    if pause:
+        plt.show()
     else:
-        raise Exception("Response malformed!" + str(jsn))
-    # print(wikitext)
-
-    res, dom = wikitextparse(wikitext, redundance=redundance)
-    # Here was the lang detection
-
-    dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
-    assert me
-    assert word
-    assert lang
-    assert len(me.split("#")) >= 2
-
-    query = (me, word, lang, def_id)
-    wikiresponse = (res, wikitext, dom)
-    origin = Originator(me)
-    exception_info = (src, word_urlify)
-    return query, wikiresponse, origin, exception_info
-
+        # plt.pause(0.01) pauses for 0.01s, and runs plt's GUI main loop
+        plt.pause(0.01)
+    global _is_plot_active
+    _is_plot_active = True

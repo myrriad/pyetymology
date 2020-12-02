@@ -74,7 +74,6 @@ all subordinate headers need to have their levels increased by 1 in order
 to comply with the fundamental concept of showing dependence through nesting.
 """
 
-# TODO: llevar#Spanish contains entry levō, but querying levō fails.
 
 # TODO: origin indexing is broken with lemmas
 
@@ -90,10 +89,11 @@ to comply with the fundamental concept of showing dependence through nesting.
 # Note: spaces are replaced with underlines in urls
 
 # TODO: remove duplicate templates if they're the same
-# Partially done: fixed bug 
+# Partially done: fixed bug
 
 # TODO: proper querying for reconstructed languages
 
+# TODO: llevar#Spanish contains entry levō, but querying levō fails.
 # TODO: proper querying and connecting with Latin macrons; ie. plicō, which must be queried by "plico"
 
 
