@@ -29,7 +29,7 @@ while not original_query: # if original query is "", then keep repeating it
     # a node from our big, working tree GG.
 
     G, origin = ety.graph(_query, replacement_origin=GG_origin)
-    ety.draw_graph(G)
+    ety.draw_graph(G, pause=True)
 
     if GG_origin:
         # good, we found a connection
