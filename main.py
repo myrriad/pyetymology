@@ -21,14 +21,14 @@ ety.draw_graph(GG)
 _ = [print(x) for x in GG.nodes]
 while not original_query: # if original query is "", then keep repeating it
     assert True
-    _Query = ety.query("") # ask for another query from the user
-    query_origin = _Query.origin
+    _Q = ety.query("") # ask for another query from the user
+    query_origin = _Q.origin
     GG_origin = ety.contains_originator(GG, query_origin)
     # We want to connect these two graphs,
     # so we take our query's origin and try to find
     # a node from our big, working tree GG.
 
-    G, origin = ety.graph(_Query, replacement_origin=GG_origin)
+    G, origin = ety.graph(_Q, replacement_origin=GG_origin)
     ety.draw_graph(G, pause=True)
 
     if GG_origin:

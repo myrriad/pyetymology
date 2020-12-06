@@ -205,7 +205,7 @@ def query(me, mimic_input=None, redundance=False) -> ThickQuery:
 
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src, word_urlify = moduleimpl.exception_info(word)
+    src, word_urlify = moduleimpl.exceptioninfo(word, lang)
     # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
 
     if online:
