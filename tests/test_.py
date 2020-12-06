@@ -5,6 +5,8 @@ import networkx as nx
 from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology import wikt_api as wx
+from pyetymology.helperobjs import QueryObjects
+from pyetymology.helperobjs.QueryObjects import ThickQuery
 
 
 def fetch_wikitext(topic):
@@ -14,16 +16,16 @@ def fetch_wikitext(topic):
             return txt
     except FileNotFoundError as error:
         print('Asset not found! Creating...')
-        query, wikiresponse, origin, _ = wx.query(topic)
-        me, word, lang, def_id = query
-        _, wikitext, _ = wikiresponse
+        # query, wikiresponse, origin = wx.query(topic).to_tupled()
+        wikitext = wx.query(topic).wikitext
+        # me, word, lang, def_id = query
+        # _, wikitext, _ = wikiresponse
         with open("assets/wtxt_" + topic + ".txt", "w+", encoding="utf-8") as f2:
             f2.write(wikitext)
         return wikitext
 
-def fetch_query(topic: str, lang: str):
+def fetch_query(topic: str, lang: str) -> ThickQuery:
     # monkeypatch.setattr('builtins.input', lambda _: lang)
-    exception_info = ("unpickled-exceptiontxt1", "unpickled-exceptiontxt2")
     try:
         with open("assets/query_" + topic + "_" + lang + ".txt", 'rb') as f:
             pickleme = dill.load(f)
@@ -42,10 +44,11 @@ def fetch_query(topic: str, lang: str):
             dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
 
             wikiresponse = None, res, dom
-            return query, wikiresponse, origin, exception_info
+            bigQ = QueryObjects.from_tupled(query, wikiresponse, origin)
+            return bigQ
     except FileNotFoundError as error:
         print('Asset not found! Creating...')
-        query, wikiresponse, origin, _ = wx.query(topic, mimic_input=lang)
+        query, wikiresponse, origin = wx.query(topic, mimic_input=lang).to_tupled()
         _, wikitext, dom = wikiresponse
         wikiresponse = None, str(wikitext), str(dom)
         pickleme = query, wikiresponse, origin
@@ -62,7 +65,8 @@ def fetch_query(topic: str, lang: str):
         res, dom = wx.wikitextparse(wikitext, redundance=True)
         dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
         wikiresponse = None, res, dom
-        return query, wikiresponse, origin, exception_info
+        bigQ = QueryObjects.from_tupled(query, wikiresponse, origin)
+        return bigQ
 def fetch_resdom(topic, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     wt = fetch_wikitext(topic)
     res, dom = wx.wikitextparse(wt, redundance=redundance)
@@ -104,10 +108,10 @@ class Test:
         assert list(wx.sections_by_level(dom, 6)) == []
     def test_fetch(self):
         return  # don't make too many API queries
-        q1 = fetch_query("adelante", "Spanish")
-        q2 = wx.query("adelante#Spanish", redundance=True)
-        query1, wres1, o1, _ = q1
-        query2, wres2, o2, _ = q2
+        Q1 = fetch_query("adelante", "Spanish")
+        Q2 = wx.query("adelante#Spanish", redundance=True)
+        query1, wres1, o1 = Q1.to_tupled()
+        query2, wres2, o2 = Q2.to_tupled()
         assert query1 == query2
         assert str(o1) == str(o2)
         _, wtxt1, dom1 = wres1

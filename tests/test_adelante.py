@@ -75,9 +75,9 @@ class TestAdelante:
 
     def test_graph(self, monkeypatch):
         monkeypatch.setattr('builtins.input', lambda _: "1")  # Multiple Definitions
-        _query = fetch_query("adelante", "Spanish")
+        _Q = fetch_query("adelante", "Spanish")
         # TODO: investigate the effect of flattening on this line
-        G, origin = wx.graph(_query)
+        G, origin = wx.graph(_Q)
         G2 = nx.DiGraph()
         nx.add_path(G2, ["adelante#Spanish$0", "$0{m|Spanish|delante ['in front']}"])
         assert nx.is_isomorphic(G, G2)

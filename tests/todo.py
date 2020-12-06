@@ -95,7 +95,7 @@ to comply with the fundamental concept of showing dependence through nesting.
 
 # TODO: llevar#Spanish contains entry levō, but querying levō fails.
 # TODO: proper querying and connecting with Latin macrons; ie. plicō, which must be queried by "plico"
-
+# See: https://en.wiktionary.org/wiki/Wiktionary:About_Latin#Do_not_use_diacritical_marks_in_page_names
 
 # DID: test_.fetch_query() and wikt_api.query() have different footprints
 # DID: fetch_query() doesn't return the last 2 values of query()

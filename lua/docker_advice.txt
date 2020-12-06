@@ -1,0 +1,23 @@
+# to create container: 
+make
+
+# to detach from container, type in container:
+Ctrl-P
+Ctrl-Q
+
+# to reattach to container, type:
+docker attach
+
+# to list containers:
+docker container ls
+docker container list
+docker ps
+
+# to kill container, type in container:
+exit
+# or type:
+docker kill llua
+
+# to clean memory:
+docker container prune
+

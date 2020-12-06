@@ -10,6 +10,7 @@ import mwparserfromhell as mwp
 import requests
 from mwparserfromhell.wikicode import Wikicode
 
+from pyetymology.helperobjs.QueryObjects import ThickQuery
 from pyetymology.langcode.cache import Cache
 import grandalf.utils as grutils
 import networkx as nx
@@ -30,6 +31,7 @@ import mwparserfromhell
 
 from pyetymology.etyobjects import EtyRelation, Originator, LemmaRelation, MissingException
 from pyetymology.lexer import Header
+from pyetymology.module import moduleimpl
 
 
 def input(__prompt: Any) -> str:
@@ -183,7 +185,7 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
     return lang_secs, me, word, lang
 
 
-def query(me, mimic_input=None, redundance=False):
+def query(me, mimic_input=None, redundance=False) -> ThickQuery:
     if not me:
 
         me = input("Enter a query: " + me)
@@ -201,8 +203,9 @@ def query(me, mimic_input=None, redundance=False):
     else:
         raise Exception(f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
 
-    word_urlify = urllib.parse.quote_plus(word)
-    src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
+    # word_urlify = urllib.parse.quote_plus(word)
+    # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
+    src, word_urlify = moduleimpl.exception_info(word)
     # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
 
     if online:
@@ -238,17 +241,16 @@ def query(me, mimic_input=None, redundance=False):
     assert lang
     assert len(me.split("#")) >= 2
 
-    query = (me, word, lang, def_id)
-    wikiresponse = (res, wikitext, dom)
     origin = Originator(me)
-    exception_info = (src, word_urlify)
-    return query, wikiresponse, origin, exception_info
+    bigQ = ThickQuery(me=me, word=word, lang=lang, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
+    return bigQ
 
-def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_mentions_sideways=False) -> nx.DiGraph:
-    me, word, lang, def_id = query
-    _, _, dom = wikiresponse  # res, wikitext, dom
+def parse_and_graph(_Query, replacement_origin=None, make_mentions_sideways=False) -> nx.DiGraph:
+    me, word, lang, def_id = _Query.query
+    dom = _Query.dom
+    origin = _Query.origin
     if replacement_origin is None:
-        replacement_origin = origin
+        replacement_origin = origin  # TODO: pass replacement_origin through origin constructor to wrap and create an origin _id
 
     ety_flag = False
     lemma_flag = False
@@ -256,7 +258,7 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
     def add_node(G, node, color_id=None):
         if color_id is None:
             global colors
-            color = colors[origin.o_id]
+            color = colors[origin.o_id]  #TODO: should be replacement_origin.o_id
         else:
             color = colors[color_id]
         G.add_node(node, id=origin.o_id, color=color)
@@ -396,11 +398,9 @@ def parse_and_graph(query, wikiresponse, origin, replacement_origin=None, make_m
 
 
 # def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
-def graph(bigquery, replacement_origin=None):
-    query, wikiresponse, origin, exception_info = bigquery
-    src, word_urlify = exception_info
+def graph(_Query: ThickQuery, replacement_origin=None):
     try:
-        G = parse_and_graph(query, wikiresponse, origin, replacement_origin=replacement_origin)
+        G = parse_and_graph(_Query, replacement_origin=replacement_origin)
     except MissingException as e:
         if e.missing_thing == "definition":
             warnings.warn(str(e))
@@ -411,15 +411,15 @@ def graph(bigquery, replacement_origin=None):
     except Exception as e:
         raise e
     finally:
-        print(src)
-        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
+        print(_Query.wikitext_link)
+        print(f"https://en.wiktionary.org/wiki/{_Query.word_urlify}")
 
     # print(len(G))
     assert type(G) == nx.DiGraph # assert only 1 graph
-    return G, origin
+    return G, _Query.origin
 
-
-colors = ["#B1D4E0", "#2E8BC0", "#0C2D48", "#145DA0", "#1f78b4"]  #
+# addition F55D3E-
+colors = ["#B1D4E0", "#2E8BC0", "F55D3E", "878E88", "F7CB15", "76BED0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
 def draw_graph(G, simple=False, pause=False):
     print("...drawing graph...")
