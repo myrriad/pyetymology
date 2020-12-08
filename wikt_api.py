@@ -60,7 +60,7 @@ If there is a subheader, it will be packaged after the specified main header tha
 """
 
 
-def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[List[Wikicode], None, None]:
+def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[Wikicode, None, None]:
 
 
     in_section = False
@@ -116,7 +116,7 @@ def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikico
             break
 
 
-def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> Generator[List[Wikicode], None, None]:
+def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> Generator[Wikicode, None, None]:
     return sections_by_level(sections, 2, recursive=recursive, flat=flat)
 
 
@@ -164,6 +164,7 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
 
         def _compr(found_langs):
             for found_lang in found_langs:
+                found_lang: Wikicode
                 h = found_lang[2:]  # EDIT: with flat=True, disregard the following. found_lang should be array of length 1, because recursive is false
                 yield h[:h.index("==")]
 
@@ -175,7 +176,16 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
                 if mimic_input:
                     lang = mimic_input
                 else:
-                    lang = input("Choose a lang from these options: " + str(lang_options))
+                    lang = None
+                    usrin = input("Choose a lang from these options: " + str(lang_options))
+                    if usrin in lang_options:
+                        lang = usrin
+                    else:
+                        for lang_opt in lang_options: # abbreviations
+                            if lang_opt.startswith(usrin):
+                                lang = lang_opt
+                    if lang is None:
+                        raise ValueError(f"Your input, {usrin}, is not recognized in the options {str(lang_options)}")
 
     me = word + "#" + lang
     lang_secs = list(sections_by_lang(dom, lang))
