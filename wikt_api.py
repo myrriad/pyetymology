@@ -182,7 +182,7 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
                         lang = usrin
                     else:
                         for lang_opt in lang_options: # abbreviations
-                            if lang_opt.startswith(usrin):
+                            if str.lower(lang_opt).startswith(usrin):
                                 lang = lang_opt
                     if lang is None:
                         raise ValueError(f"Your input, {usrin}, is not recognized in the options {str(lang_options)}")
