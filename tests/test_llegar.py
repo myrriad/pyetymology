@@ -8,7 +8,7 @@ import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology import wikt_api as wx
+from pyetymology import wikt_api as wx, etyobjects
 from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
@@ -33,6 +33,7 @@ class TestLlegar:
 
     def test_graph(self, monkeypatch):
         # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
+        etyobjects.reset_global_o_id()
         _Q = fetch_query("llegar", "Spanish")
         G, origin = wx.graph(_Q)
         global G_llegar
@@ -46,6 +47,7 @@ class TestLlegar:
     # nodes: [llevar#Spanish$0, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 
     def test_lemma_llegaron(self):
+        etyobjects.reset_global_o_id()
         _Q = fetch_query("llegaron", "Spanish")
         G, origin = wx.graph(_Q)
         assert True
@@ -56,6 +58,7 @@ class TestLlegar:
         assert [(repr(l), repr(r)) for l, r in G.edges] == [e for e in reversed(list(G2.edges))]
 
     def test_connection(self, monkeypatch):
+        etyobjects.reset_global_o_id()
         # patch_multiple_input(monkeypatch, ["llevaron, llevar"]) # TODO: this actually isn't used
 
         fetched_Q = fetch_query("llegaron", "Spanish")

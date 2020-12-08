@@ -100,4 +100,6 @@ to comply with the fundamental concept of showing dependence through nesting.
 # DID: test_.fetch_query() and wikt_api.query() have different footprints
 # DID: fetch_query() doesn't return the last 2 values of query()
 
-# TODO: query() is totally untested, because it is emulated by fetch_query(0
+# TODO: query() is totally untested, because it is emulated by fetch_query(
+
+# TODO: for origins, show their old AND new o_id

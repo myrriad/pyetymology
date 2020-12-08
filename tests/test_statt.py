@@ -8,7 +8,7 @@ import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology import wikt_api as wx
+from pyetymology import wikt_api as wx, etyobjects
 from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
@@ -17,6 +17,8 @@ from pyetymology.tests.test_ import fetch_resdom, fetch_query
 
 class TestStatt:
     def test_missing_definition_graph(self):
+        etyobjects.reset_global_o_id()
+
         fetched_Q = fetch_query("statt", "German")
         # TODO: investigate the effect of flattening on this line
         G, origin = wx.graph(fetched_Q)
@@ -24,4 +26,4 @@ class TestStatt:
         G2.add_node(origin)
         assert nx.is_isomorphic(G, G2)
         assert len(G.nodes) == 1
-        assert [s for s in G.nodes] == [s for s in G2.nodes]
+        assert [n for n in G.nodes] == [n for n in G2.nodes]

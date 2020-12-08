@@ -206,8 +206,10 @@ def query(me, mimic_input=None, redundance=False) -> ThickQuery:
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
     src, word_urlify = moduleimpl.exceptioninfo(word, lang)
+    # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
+    # TODO: and to load the page we need to know the word_urlify
+    # TODO: and word_urlify must remove macrons
     # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
-
     if online:
         global session
         res = session.get(src)
@@ -227,7 +229,7 @@ def query(me, mimic_input=None, redundance=False) -> ThickQuery:
     elif "error" in jsn:
         print(src)
         print(f"https://en.wiktionary.org/wiki/{word_urlify}")
-        raise Exception("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]))
+        raise MissingException("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]), missing_thing="Everything")
     else:
         raise Exception("Response malformed!" + str(jsn))
     # print(wikitext)
@@ -245,28 +247,26 @@ def query(me, mimic_input=None, redundance=False) -> ThickQuery:
     bigQ = ThickQuery(me=me, word=word, lang=lang, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
     return bigQ
 
-def parse_and_graph(_Query, replacement_origin=None, make_mentions_sideways=False) -> nx.DiGraph:
+def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False) -> nx.DiGraph:
     me, word, lang, def_id = _Query.query
     dom = _Query.dom
-    origin = _Query.origin
-    if replacement_origin is None:
-        replacement_origin = origin  # TODO: pass replacement_origin through origin constructor to wrap and create an origin _id
-
+    query_origin = _Query.origin
+    existent_origin = existent_node if existent_node else query_origin # TODO: pass replacement_origin through origin constructor to wrap and create an origin _id
+    prev = existent_origin # origin that is guaranteed already exists
+    # TODO: existent node and the origin must be the same, or else they don't compose properly.
+    # TODO: brainstorm workarounds. ie. OriginsTracker. TODO: finish implementing that
+    new_origin = query_origin  #type: Originator # new_origin should have the updated o_id
     ety_flag = False
     lemma_flag = False
 
-    def add_node(G, node, color_id=None):
-        if color_id is None:
-            global colors
-            color = colors[origin.o_id]  #TODO: should be replacement_origin.o_id
-        else:
-            color = colors[color_id]
-        G.add_node(node, id=origin.o_id, color=color)
+    def add_node(G, node):
+        assert type(node) in [EtyRelation, LemmaRelation, Originator]
+        global colors
+        G.add_node(node, id=node.o_id, color=colors[node.o_id])
 
     G = nx.DiGraph()
-    prev = replacement_origin
 
-    add_node(G, replacement_origin, color_id=replacement_origin.color_id if replacement_origin else None)
+    add_node(G, prev)
     # if replacement_origin is not the origin, then that means that the origin was replaced
     # by a preexisting node that was already colored
     # therefore we should not colorize it
@@ -303,7 +303,7 @@ def parse_and_graph(_Query, replacement_origin=None, make_mentions_sideways=Fals
             # if etytemp
 
             if isinstance(node, mwp.wikicode.Template):
-                etyr = EtyRelation(origin, node)
+                etyr = EtyRelation(new_origin, node)
                 # print(str(etyr))
                 if not dotyet:
                     firstsentence.append(etyr)
@@ -375,7 +375,7 @@ def parse_and_graph(_Query, replacement_origin=None, make_mentions_sideways=Fals
                     #lang = node.params[0]
                     # word = node.params[1]
                     # print(f"Found lemma?: lang: {lang} word: {word}")
-                    lemma_rel = LemmaRelation(origin, node)
+                    lemma_rel = LemmaRelation(query_origin, node)
                     # print("-"+repr(subsec))
                     lemma_flag = True
 
@@ -400,7 +400,7 @@ def parse_and_graph(_Query, replacement_origin=None, make_mentions_sideways=Fals
 # def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
 def graph(_Query: ThickQuery, replacement_origin=None):
     try:
-        G = parse_and_graph(_Query, replacement_origin=replacement_origin)
+        G = parse_and_graph(_Query, existent_node=replacement_origin)
     except MissingException as e:
         if e.missing_thing == "definition":
             warnings.warn(str(e))
@@ -419,7 +419,7 @@ def graph(_Query: ThickQuery, replacement_origin=None):
     return G, _Query.origin
 
 # addition F55D3E-
-colors = ["#B1D4E0", "#2E8BC0", "F55D3E", "878E88", "F7CB15", "76BED0", "#0C2D48", "#145DA0", "#1f78b4"]  #
+colors = ["#B1D4E0", "#2E8BC0", "#F55D3E", "#878E88", "#F7CB15", "#76BED0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
 def draw_graph(G, simple=False, pause=False):
     print("...drawing graph...")
@@ -444,6 +444,7 @@ def draw_graph(G, simple=False, pause=False):
         nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
     else:
         nx.draw(G, pos=poses, with_labels=True)
+
     # x.draw_networkx_edges(G, pos=poses)
 
     if pause:

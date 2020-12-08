@@ -4,7 +4,8 @@ import dill
 import networkx as nx
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology import wikt_api as wx
+from pyetymology import wikt_api as wx, etyobjects
+from pyetymology.etyobjects import Originator
 from pyetymology.helperobjs import QueryObjects
 from pyetymology.helperobjs.QueryObjects import ThickQuery
 
@@ -45,6 +46,7 @@ def fetch_query(topic: str, lang: str) -> ThickQuery:
 
             wikiresponse = None, res, dom
             bigQ = QueryObjects.from_tupled(query, wikiresponse, origin)
+            # TODO eliminate global state
             return bigQ
     except FileNotFoundError as error:
         print('Asset not found! Creating...')
@@ -66,6 +68,7 @@ def fetch_query(topic: str, lang: str) -> ThickQuery:
         dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
         wikiresponse = None, res, dom
         bigQ = QueryObjects.from_tupled(query, wikiresponse, origin)
+         # don't do it over here because it is already done
         return bigQ
 def fetch_resdom(topic, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     wt = fetch_wikitext(topic)
@@ -73,6 +76,8 @@ def fetch_resdom(topic, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     return res, dom
 
 def is_eq__repr(G, G__repr):
+    # wx.draw_graph(G)
+    # wx.draw_graph(G__repr)
     assert nx.is_isomorphic(G, G__repr)
 
     assert set([repr(s) for s in G.nodes]) == set([s for s in G__repr.nodes])  # nx usually reverses the nodes, probably b/c of nx.add_path

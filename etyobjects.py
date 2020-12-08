@@ -1,6 +1,6 @@
 import string
 import warnings
-from typing import Tuple
+from typing import Tuple, Any
 
 import networkx as nx
 
@@ -9,9 +9,16 @@ import mwparserfromhell
 from pyetymology.langcode import langcodes
 
 originator_id_incrementer = 0
+
+
+def reset_global_o_id():
+    global originator_id_incrementer
+    originator_id_incrementer = 0
+
 class Originator:
 
-    def __init__(self, me: string, o_id: int = None):
+
+    def __init__(self, me: Any, o_id: int = None):
         self.me = me
 
         if o_id is None:
@@ -22,15 +29,12 @@ class Originator:
             self.o_id = o_id
 
     def __str__(self):
-        return self.me
+        return str(self.me)
 
     def __repr__(self):
-        return self.me + "$" + str(self.o_id)
+        return str(self.me) + "$" + str(self.o_id)
 
 
-    @property
-    def color_id(self):
-        return self.o_id
 class Affixal:
     def __init__(self, template: mwparserfromhell.wikicode.Template, rtype: string):
         params = template.params
@@ -160,7 +164,7 @@ class EtyRelation:
         return not self.null
 
     @property
-    def color_id(self):
+    def o_id(self):
         return self.origin.o_id
 
 
@@ -245,7 +249,7 @@ class LemmaRelation:
     # def __eq__(self, other): This must be made compatable with __hash__() to work w/ nx - not worth it
     #     return self.__repr__() == other.__repr__()
     @property
-    def color_id(self):
+    def o_id(self):
         return self.origin.o_id
 
 class MissingException(Exception):

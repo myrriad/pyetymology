@@ -1,4 +1,4 @@
-from pyetymology import wikt_api
+from pyetymology import wikt_api, etyobjects
 from pyetymology.tests import test_
 
 import networkx as nx
@@ -19,6 +19,8 @@ def test_to_dict_of_lists_equivalence():
     assert dl == dl2
 
 def test_graph_eq():
+    etyobjects.reset_global_o_id()
+
     _Q = test_.fetch_query("prototype", "English")
     G, o = wikt_api.graph(_Q)
     wikt_api.draw_graph(G, pause=True)
