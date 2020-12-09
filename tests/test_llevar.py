@@ -8,7 +8,7 @@ import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology import wikt_api as wx, etyobjects
+from pyetymology import wikt_api as wx, etyobjects, main
 from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
@@ -137,43 +137,30 @@ class TestLlevar:
         assert not nx.is_isomorphic(Llevar, Llevaron)
 
     def test_connection(self, monkeypatch):
-        etyobjects.reset_global_o_id()
 
-        # patch_multiple_input(monkeypatch, ["llevaron, llevar"]) # TODO: this actually isn't used
+        Gs = list(main.mainloop(test_queries=[("llevaron", "Spanish"), ("llevar", "Spanish")]))
+        # fetched_Q = fetch_query("llevaron", "Spanish")
+        # GG = wx.graph(fetched_Q)
+        assert len(Gs) == 3
+        G1, G2, GG = Gs
+        # _Q = fetch_query("llevar", "Spanish") # accept one input
 
-        fetched_Q = fetch_query("llevaron", "Spanish")
-        GG = wx.graph(fetched_Q)
-        # wx.draw_graph(GG, origin)
-        # _ = [print(x) for x in GG.nodes]
-        #while not original_query:  # if original query is "", then keep repeating it
-        #    assert True
-        if True:
-            _Q = fetch_query("llevar", "Spanish") # accept one input
-            query_origin = _Q.origin  # extract from origin of query from variable scope dump.
-            GG_origin = wx.contains_originator(GG, query_origin)
+        # G = wx.graph(_Q, replacement_origin=GG_origin)
+        # assert GG_origin # llevaron should contain llevar
+        global G_llevaron
+        assert is_eq__repr(G1, G_llevaron)
 
-            # See main.py on connection
-            G = wx.graph(_Q, replacement_origin=GG_origin)
-            # ety.draw_graph(G, origin)
-            assert GG_origin # llevaron should contain llevar
+        G_llevar_with_rorigin = nx.DiGraph()
+        nx.add_path(G_llevar_with_rorigin, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}'])
+        assert is_eq__repr(G2, G_llevar_with_rorigin)
 
-            global G_llevaron
-            assert is_eq__repr(GG, G_llevaron)
+        # GG2 -> GG
+        G_composed = nx.DiGraph()
+        nx.add_path(G_composed, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}', 'llevaron#Spanish$0'])
 
-            G_llevar_with_rorigin = nx.DiGraph()
-            nx.add_path(G_llevar_with_rorigin, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}'])
-            assert is_eq__repr(G, G_llevar_with_rorigin)
-
-            # fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
-            GG2 = nx.compose(GG, G)
-            G_composed = nx.DiGraph()
-            nx.add_path(G_composed, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}', 'llevaron#Spanish$0'])
-
-            # wx.draw_graph(G_composed) # DID: this fails. Why? Answer: blank node_colors.
-            # wx.draw_graph(GG2)
-            assert True
-            assert is_eq__repr(GG2, G_composed)
-            # TODO: origin indexing is broken with lemmas
+        # wx.draw_graph(G_composed) # DID: this fails. Why? Answer: blank node_colors.
+        assert is_eq__repr(GG, G_composed)
+        # TODO: origin indexing is broken with lemmas
 # [$0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 # GG2.nodes [llevaron#Spanish$0, $0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 # G_composed.nodes ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}', 'llevaron#Spanish$0']
