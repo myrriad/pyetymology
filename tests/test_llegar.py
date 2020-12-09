@@ -59,7 +59,7 @@ class TestLlegar:
         assert [(repr(l), repr(r)) for l, r in G.edges] == [e for e in reversed(list(G2.edges))]
 
     def test_connection(self, monkeypatch):
-        Gs = list(main.mainloop(test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish")]))
+        Gs = main.mainloop(test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish")])
 
         print(Gs)
         assert len(Gs) == 3
@@ -92,5 +92,6 @@ class TestLlegar:
 # [$0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 # GG2.nodes [llevaron#Spanish$0, $0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 # G_composed.nodes ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}', 'llevaron#Spanish$0']
+
 
 

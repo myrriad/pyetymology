@@ -13,11 +13,12 @@ from pyetymology.etyobjects import Originator
 from pyetymology.tests import test_
 
 
-def mainloop(test_queries:List[Tuple[str, str]] = None):
+def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> List[nx.DiGraph]:
     original_query = ""  # lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#Spanish"#"Reconstruction:Proto-Italic/feiljos#"
     etyobjects.reset_global_o_id()  # TODO: avoid global state in Originator
     test_fetch_idx = 0
     _EXIT = object()
+    retn = []
     def test_safe_query(original_query):
         nonlocal test_fetch_idx
         nonlocal test_queries
@@ -44,8 +45,8 @@ def mainloop(test_queries:List[Tuple[str, str]] = None):
         _Q = test_safe_query("") # ask for another query from the user
         total_queries += 1
         if _Q is _EXIT:  # exit condition
-            yield GG
-            return
+            retn.append(GG)
+            return retn
 
         query_origin = _Q.origin
         if GG:
@@ -58,14 +59,18 @@ def mainloop(test_queries:List[Tuple[str, str]] = None):
 
         G = ety.graph(_Q, replacement_origin=GG_origin)
         if test_queries:
-            yield G
-        ety.draw_graph(G, pause=True)
+            retn.append(G)
+        if draw_graphs:
+            ety.draw_graph(G, pause=True)
         _ = [print(x) for x in G.nodes]
 
         if GG_origin:
+
             # good, we found a connection
             # fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
-            GG2 = nx.compose(GG, G)
+            GG = nx.compose(GG, G)
+            if draw_graphs:
+                ety.draw_graph(GG)
         else:
             if total_queries != 1:  # warn unconnected queries, unless it's the initial query in which it's OK
                 warnings.warn("Unconnected query " + str(_Q.origin))
@@ -82,12 +87,18 @@ def mainloop(test_queries:List[Tuple[str, str]] = None):
         else:
             raise Exception("Unconnected query " + origin)
         """
-        _ = [print(x) for x in GG.nodes]
-        ety.draw_graph(GG2)
-        GG = GG2
+
 
     # TODO: Offline mode using a dump at https://dumps.wikimedia.org/enwiktionary/
 
-if __name__ == "__main__":
+def hi():
+    print("hi")
+def do_mainloop():
+    print("doing mainloop!")
     mainloop()
+if __name__ == "__main__":
+    print("main")
+    hi()
+    mainloop(None)
+    print("what?")
 
