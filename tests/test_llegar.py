@@ -9,6 +9,7 @@ from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology import wikt_api as wx, etyobjects
+from pyetymology import main
 from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
@@ -58,6 +59,8 @@ class TestLlegar:
         assert [(repr(l), repr(r)) for l, r in G.edges] == [e for e in reversed(list(G2.edges))]
 
     def test_connection(self, monkeypatch):
+        GG = main.mainloop(test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish")])
+        return
         etyobjects.reset_global_o_id()
         # patch_multiple_input(monkeypatch, ["llevaron, llevar"]) # TODO: this actually isn't used
 
