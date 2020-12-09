@@ -7,6 +7,7 @@ import networkx as nx
 import mwparserfromhell
 
 from pyetymology.langcode import langcodes
+from pyetymology.module import moduleimpl
 
 originator_id_incrementer = 0
 
@@ -49,7 +50,25 @@ class Affixal:
             # TODO: Everything
 
 
-class EtyRelation:
+class WordRelation:
+    def matches_query(self, me:str, word:str=None, lang:str=None, def_id:str=None) -> bool:
+        if me:
+            terms = me.split("#")
+            def_id = None
+            if len(terms) == 1:
+                word = me
+                warnings.warn("Language not detected for query " + me)
+                return self.word == word
+            elif len(terms) == 3:
+                warnings.warn("definition ids not supported yet")
+                word, lang, _ = terms
+            elif len(terms) == 2:
+                word, lang = terms
+            else:
+                raise ValueError(f"query {terms} has unexpected number of terms")
+        return moduleimpl.matches(self.word, self.langname, word, lang)  # TODO: NOT iterate through entire graph when trying to find a match
+
+class EtyRelation(WordRelation):
     ety_abbrs = {"derived": "der",
                  "inherited": "inh",
                  "borrowed": "bor",
@@ -130,21 +149,6 @@ class EtyRelation:
         self._selflangname = langcodes.name(_selflang)
         self.word = word
 
-    def matches_query(self, me) -> bool:
-        terms = me.split("#")
-        def_id = None
-        if len(terms) == 1:
-            word = me
-            warnings.warn("Language not detected for query " + me)
-            return self.word == word
-        elif len(terms) == 2:
-            word, lang = terms
-            return self.word == word and self.langname == lang
-        elif len(terms) == 3:
-            warnings.warn("definition ids not supported yet")
-            word, lang = terms
-            return self.word == word and self.langname == lang
-
     def __str__(self):
         if not self:
             return "{{" + self.rtype + " null " + repr(self.params) + "}}"
@@ -168,7 +172,7 @@ class EtyRelation:
         return self.origin.o_id
 
 
-class LemmaRelation:
+class LemmaRelation(WordRelation):
 
     def __init__(self, origin: Originator, template: mwparserfromhell.wikicode.Template):
         self.origin = origin  # type: Originator
@@ -210,21 +214,6 @@ class LemmaRelation:
         if lang and not self.langname:
             print(f"{lang} is None")
         self.word = word
-
-    def matches_query(self, me) -> bool:
-        terms = me.split("#")
-        def_id = None
-        if len(terms) == 1:
-            word = me
-            warnings.warn("Language not detected for query " + me)
-            return self.word == word
-        elif len(terms) == 2:
-            word, lang = terms
-            return self.word == word and self.langname == lang
-        elif len(terms) == 3:
-            warnings.warn("definition ids not supported yet")
-            word, lang = terms
-            return self.word == word and self.langname == lang
 
     def matches(self, other):
         return type(other) == LemmaRelation and repr(self) == repr(other)

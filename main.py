@@ -34,6 +34,7 @@ def main(test_queries:List[Tuple[str, str]] = None):
     while not exit:
         assert True
         _Q = test_safe_query("") # ask for another query from the user
+
         query_origin = _Q.origin
         GG_origin = ety.contains_originator(GG, query_origin)
         # We want to connect these two graphs,

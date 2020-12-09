@@ -59,3 +59,7 @@ def empirical_link_keyword(key, ground_truth):
 
 def emulated_link_keyword(key):
     pass # actually run the Module links.lua and use that to generate the link
+
+
+def matches(word1, langname1, word2, langname2):
+    return langname1 == langname2 and urlword(word1, langname1) == urlword(word2, langname2)

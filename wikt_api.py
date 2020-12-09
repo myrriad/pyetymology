@@ -182,7 +182,7 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
                         lang = usrin
                     else:
                         for lang_opt in lang_options: # abbreviations
-                            if str.lower(lang_opt).startswith(usrin):
+                            if str.lower(lang_opt).startswith(str.lower(usrin)):
                                 lang = lang_opt
                     if lang is None:
                         raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
@@ -195,7 +195,7 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
     return lang_secs, me, word, lang
 
 
-def query(me, mimic_input=None, redundance=False) -> ThickQuery:
+def query(me, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
     if not me:
 
         me = input("Enter a query: " + me)
@@ -213,9 +213,18 @@ def query(me, mimic_input=None, redundance=False) -> ThickQuery:
     else:
         raise Exception(f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
 
+    if working_G:
+        node = find_existent_query(working_G, me)
+        if node:
+            word = node.word
+            if node.lang:
+                lang = node.lang # this is necessary for say Latin plico. We find the existing template from the suggestion,
+                # then we deduct the actual word and lang
+
+
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src, word_urlify = moduleimpl.exceptioninfo(word, lang)
+    src, word_urlify = moduleimpl.exceptioninfo(word, lang) # we take the word and lang and parse it into the corresponding wikilink
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
@@ -257,6 +266,25 @@ def query(me, mimic_input=None, redundance=False) -> ThickQuery:
     bigQ = ThickQuery(me=me, word=word, lang=lang, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
     return bigQ
 
+
+
+def find_existent_query(GG: nx.DiGraph, query: str):
+    # _ = [print(x) for x in GG.nodes]
+    for node in GG.nodes:
+        if type(node) is EtyRelation:
+            node: EtyRelation
+            if node.matches_query(query):
+                return node
+        elif type(node) is LemmaRelation:
+            node: LemmaRelation
+            if node.matches_query(query):
+                return node
+        elif type(node) is Originator:
+            warnings.warn("Why is it matching the originator?")
+        else:
+            raise ValueError(f"node has unexpected type {type(node)}")
+
+
 def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False) -> nx.DiGraph:
     me, word, lang, def_id = _Query.query
     dom = _Query.dom
@@ -269,14 +297,19 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     ety_flag = False
     lemma_flag = False
 
-    def add_node(G, node):
+    def add_node(G, node, color=None):
         assert type(node) in [EtyRelation, LemmaRelation, Originator]
         global colors
-        G.add_node(node, id=node.o_id, color=colors[node.o_id])
+        color = colors[node.o_id] if color is None else color
+        G.add_node(node, id=node.o_id, color=color)
 
     G = nx.DiGraph()
 
-    add_node(G, prev)
+    if type(prev) is Originator and prev.o_id == 0:
+        # True Origin
+        add_node(G, prev, color="#ff0000")
+    else:
+        add_node(G, prev)
     # if replacement_origin is not the origin, then that means that the origin was replaced
     # by a preexisting node that was already colored
     # therefore we should not colorize it
