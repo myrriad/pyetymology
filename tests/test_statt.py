@@ -21,9 +21,9 @@ class TestStatt:
 
         fetched_Q = fetch_query("statt", "German")
         # TODO: investigate the effect of flattening on this line
-        G, origin = wx.graph(fetched_Q)
+        G = wx.graph(fetched_Q)
         G2 = nx.DiGraph()
-        G2.add_node(origin)
+        G2.add_node(fetched_Q.origin)
         assert nx.is_isomorphic(G, G2)
         assert len(G.nodes) == 1
         assert [n for n in G.nodes] == [n for n in G2.nodes]

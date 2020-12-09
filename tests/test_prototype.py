@@ -9,7 +9,7 @@ from pyetymology.tests.assets import asset_prototype
 def test_to_dict_of_lists_equivalence():
     return True # this shouldn't change very much
     _Q = test_.fetch_query("prototype", "English")
-    G, o = wikt_api.graph(_Q)
+    G = wikt_api.graph(_Q)
     wikt_api.draw_graph(G, pause=True)
     dl = nx.to_dict_of_lists(G)
     print(dl)
@@ -22,7 +22,7 @@ def test_graph_eq():
     etyobjects.reset_global_o_id()
 
     _Q = test_.fetch_query("prototype", "English")
-    G, o = wikt_api.graph(_Q)
+    G = wikt_api.graph(_Q)
     wikt_api.draw_graph(G, pause=True)
     dl = nx.to_dict_of_lists(G)
     print(dl)

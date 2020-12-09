@@ -10,7 +10,7 @@ import mwparserfromhell as mwp
 import requests
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology.helperobjs.QueryObjects import ThickQuery
+from pyetymology.helperobjs.querying import ThickQuery
 from pyetymology.langcode.cache import Cache
 import grandalf.utils as grutils
 import networkx as nx
@@ -185,7 +185,7 @@ def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=No
                             if str.lower(lang_opt).startswith(usrin):
                                 lang = lang_opt
                     if lang is None:
-                        raise ValueError(f"Your input, {usrin}, is not recognized in the options {str(lang_options)}")
+                        raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
 
     me = word + "#" + lang
     lang_secs = list(sections_by_lang(dom, lang))
@@ -408,7 +408,7 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
 
 
 # def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
-def graph(_Query: ThickQuery, replacement_origin=None):
+def graph(_Query: ThickQuery, replacement_origin=None) -> nx.DiGraph:
     try:
         G = parse_and_graph(_Query, existent_node=replacement_origin)
     except MissingException as e:
@@ -426,7 +426,7 @@ def graph(_Query: ThickQuery, replacement_origin=None):
 
     # print(len(G))
     assert type(G) == nx.DiGraph # assert only 1 graph
-    return G, _Query.origin
+    return G
 
 # addition F55D3E-
 colors = ["#B1D4E0", "#2E8BC0", "#F55D3E", "#878E88", "#F7CB15", "#76BED0", "#0C2D48", "#145DA0", "#1f78b4"]  #

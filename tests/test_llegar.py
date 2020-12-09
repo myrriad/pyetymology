@@ -35,7 +35,7 @@ class TestLlegar:
         # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
         etyobjects.reset_global_o_id()
         _Q = fetch_query("llegar", "Spanish")
-        G, origin = wx.graph(_Q)
+        G = wx.graph(_Q)
         global G_llegar
         G2 = G_llegar
         assert nx.is_isomorphic(G, G2)
@@ -49,7 +49,7 @@ class TestLlegar:
     def test_lemma_llegaron(self):
         etyobjects.reset_global_o_id()
         _Q = fetch_query("llegaron", "Spanish")
-        G, origin = wx.graph(_Q)
+        G = wx.graph(_Q)
         assert True
         G2 = G_llegaron # this is the repr() version of each node
         assert nx.is_isomorphic(G, G2)
@@ -62,7 +62,7 @@ class TestLlegar:
         # patch_multiple_input(monkeypatch, ["llevaron, llevar"]) # TODO: this actually isn't used
 
         fetched_Q = fetch_query("llegaron", "Spanish")
-        GG, origin = wx.graph(fetched_Q)
+        GG = wx.graph(fetched_Q)
         # wx.draw_graph(GG, origin)
         # _ = [print(x) for x in GG.nodes]
         #while not original_query:  # if original query is "", then keep repeating it
@@ -73,7 +73,7 @@ class TestLlegar:
             GG_origin = wx.contains_originator(GG, query_origin)
 
             # See main.py on connection
-            G, origin = wx.graph(_Q, replacement_origin=GG_origin)
+            G = wx.graph(_Q, replacement_origin=GG_origin)
             # ety.draw_graph(G, origin)
             assert GG_origin # llevaron should contain llevar
 

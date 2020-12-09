@@ -104,7 +104,7 @@ class TestLlevar:
         etyobjects.reset_global_o_id()
         # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
         fetched_Q = fetch_query("llevar", "Spanish")
-        G, origin = wx.graph(fetched_Q)
+        G = wx.graph(fetched_Q)
         global G_llevar
         G2 = G_llevar
         assert nx.is_isomorphic(G, G2)
@@ -119,7 +119,7 @@ class TestLlevar:
         etyobjects.reset_global_o_id()
 
         fetched_Q = fetch_query("llevaron", "Spanish")
-        G, origin = wx.graph(fetched_Q)
+        G = wx.graph(fetched_Q)
         global G_llevaron
         G2 = G_llevaron # this is the repr() version of each node
         assert nx.is_isomorphic(G, G2)
@@ -129,10 +129,10 @@ class TestLlevar:
 
     def test_not_equal(self):
         fetched_Q = fetch_query("llevaron", "Spanish")
-        Llevaron, origin = wx.graph(fetched_Q)
+        Llevaron = wx.graph(fetched_Q)
 
         fetched_Q = fetch_query("llevar", "Spanish")
-        Llevar, origin = wx.graph(fetched_Q)
+        Llevar = wx.graph(fetched_Q)
 
         assert not nx.is_isomorphic(Llevar, Llevaron)
 
@@ -142,7 +142,7 @@ class TestLlevar:
         # patch_multiple_input(monkeypatch, ["llevaron, llevar"]) # TODO: this actually isn't used
 
         fetched_Q = fetch_query("llevaron", "Spanish")
-        GG, origin = wx.graph(fetched_Q)
+        GG = wx.graph(fetched_Q)
         # wx.draw_graph(GG, origin)
         # _ = [print(x) for x in GG.nodes]
         #while not original_query:  # if original query is "", then keep repeating it
@@ -153,7 +153,7 @@ class TestLlevar:
             GG_origin = wx.contains_originator(GG, query_origin)
 
             # See main.py on connection
-            G, origin = wx.graph(_Q, replacement_origin=GG_origin)
+            G = wx.graph(_Q, replacement_origin=GG_origin)
             # ety.draw_graph(G, origin)
             assert GG_origin # llevaron should contain llevar
 

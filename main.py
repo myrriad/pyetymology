@@ -26,10 +26,12 @@ def main(test_queries:List[Tuple[str, str]] = None):
         else:
             _q1 = ety.query(original_query)
         return _q1
-    GG, origin = ety.graph(test_safe_query(original_query))
+
+    GG = ety.graph(test_safe_query(original_query))
     ety.draw_graph(GG)
     _ = [print(x) for x in GG.nodes]
-    while not original_query: # if original query is "", then keep repeating it
+    exit = False
+    while not exit:
         assert True
         _Q = test_safe_query("") # ask for another query from the user
         query_origin = _Q.origin
@@ -38,15 +40,16 @@ def main(test_queries:List[Tuple[str, str]] = None):
         # so we take our query's origin and try to find
         # a node from our big, working tree GG.
 
-        G, origin = ety.graph(_Q, replacement_origin=GG_origin)
+        G = ety.graph(_Q, replacement_origin=GG_origin)
         ety.draw_graph(G, pause=True)
+        _ = [print(x) for x in GG.nodes]
 
         if GG_origin:
             # good, we found a connection
             # fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
             GG2 = nx.compose(GG, G)
         else:
-            warnings.warn("Unconnected query " + str(origin))
+            warnings.warn("Unconnected query " + str(_Q.origin))
             GG = G
             continue
 
