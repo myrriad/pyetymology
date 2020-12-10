@@ -157,62 +157,53 @@ Returns sections of only 1 lang
 """
 
 
-def auto_lang(dom: List[Wikicode], me: str, word: str, lang: str, mimic_input=None) -> Tuple[List[Wikicode], str, str, str]:
-    if not lang or lang == "" or lang is None:
-        # try to extract lang from dom
-        found_langs = all_lang_sections(dom, flat=True)
+def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], str, str, str]:
+    lang = ""
+    # try to extract lang from dom
+    found_langs = all_lang_sections(dom, flat=True)
 
-        def _compr(found_langs):
-            for found_lang in found_langs:
-                found_lang: Wikicode
-                h = found_lang[2:]  # EDIT: with flat=True, disregard the following. found_lang should be array of length 1, because recursive is false
-                yield h[:h.index("==")]
+    def _compr(found_langs):
+        for found_lang in found_langs:
+            found_lang: Wikicode
+            h = found_lang[2:]  # EDIT: with flat=True, disregard the following. found_lang should be array of length 1, because recursive is false
+            yield h[:h.index("==")]
 
-        lang_options = list(_compr(found_langs))
-        if len(lang_options) == 1:
-            lang = lang_options[0]
-        else:
-            while not lang or lang == "" or lang is None:
-                if mimic_input:
-                    lang = mimic_input
+    lang_options = list(_compr(found_langs))
+    if len(lang_options) == 0:
+        raise MissingException("Zero langs detected !? !?", missing_thing="language_sections")
+    elif len(lang_options) == 1:
+        lang = lang_options[0]
+    else:
+        while not lang or lang == "" or lang is None:
+            if mimic_input:
+                lang = mimic_input
+            else:
+                lang = None
+                usrin = input("Choose a lang from these options: " + str(lang_options))
+                if usrin in lang_options:
+                    lang = usrin
                 else:
-                    lang = None
-                    usrin = input("Choose a lang from these options: " + str(lang_options))
-                    if usrin in lang_options:
-                        lang = usrin
-                    else:
-                        for lang_opt in lang_options: # abbreviations
-                            if str.lower(lang_opt).startswith(str.lower(usrin)):
-                                lang = lang_opt
-                    if lang is None:
-                        raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
+                    for lang_opt in lang_options: # abbreviations
+                        if str.lower(lang_opt).startswith(str.lower(usrin)):
+                            lang = lang_opt
+                if lang is None:
+                    raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
 
-    me = word + "#" + lang
+    # me = word + "#" + lang
     lang_secs = list(sections_by_lang(dom, lang))
 
     if not lang_secs:
-        raise MissingException(f"Word \"{word}\" has no entry under language {lang}", missing_thing="language_section")
-    return lang_secs, me, word, lang
+        raise MissingException(f"No entry was found in wikitext under language {lang} !? !? "
+                               f"(Unless there is a bug, this exception shouldn't be called!) DOM: \n\t{repr(dom)}", missing_thing="language_section")
+    return lang_secs, lang
 
 
 def query(me, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
     if not me:
-
         me = input("Enter a query: " + me)
     terms = me.split("#")
-    def_id = None
-    if len(terms) == 1:
-        word = me
-        # lang = input("Language not detected! Please input one: ")
-        lang = ""
-        # me = word + "#" + lang
-    elif len(terms) == 2:
-        word, lang = terms
-    elif len(terms) == 3:
-        word, lang, def_id = terms
-    else:
-        raise Exception(f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
 
+    found = False
     if working_G:
         node = find_existent_query(working_G, me)
         if node:
@@ -220,11 +211,26 @@ def query(me, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) ->
             if node.lang:
                 lang = node.lang # this is necessary for say Latin plico. We find the existing template from the suggestion,
                 # then we deduct the actual word and lang
-
+            else:
+                lang = ""
+            found = True
+    def_id = None
+    if not found:
+        if len(terms) == 1:
+            word = me
+            # lang = input("Language not detected! Please input one: ")
+            lang = ""
+        elif len(terms) == 2:
+            word, lang = terms
+        elif len(terms) == 3:
+            word, lang, def_id = terms
+        else:
+            raise Exception(
+                f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
 
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src, word_urlify = moduleimpl.exceptioninfo(word, lang) # we take the word and lang and parse it into the corresponding wikilink
+    src, word_urlify = moduleimpl.src_urlword(word, lang) # we take the word and lang and parse it into the corresponding wikilink
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
@@ -256,7 +262,8 @@ def query(me, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) ->
     res, dom = wikitextparse(wikitext, redundance=redundance)
     # Here was the lang detection
 
-    dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
+    dom, lang = auto_lang(dom, mimic_input=mimic_input)
+    me = word + "#" + lang
     assert me
     assert word
     assert lang
@@ -462,7 +469,7 @@ def graph(_Query: ThickQuery, replacement_origin=None) -> nx.DiGraph:
     return G
 
 # addition F55D3E-
-colors = ["#B1D4E0", "#2E8BC0", "#F55D3E", "#878E88", "#F7CB15", "#76BED0", "#0C2D48", "#145DA0", "#1f78b4"]  #
+colors = ["#B1D4E0", "#2E8BC0", "#878E88", "#F7CB15", "#76BED0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
 def draw_graph(G, simple=False, pause=False):
     print("...drawing graph...")

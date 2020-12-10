@@ -33,10 +33,7 @@ Some POS headers are explicitly disallowed:
 # TODO: Template back-formation https://en.wiktionary.org/wiki/Template:back-formation
 # TODO: Template portmanteau, blend, coined
 
-
-
 # TODO: Entry layout manual: https://en.wiktionary.org/wiki/Wiktionary:Entry_layout
-
 # TODO: Etymology manual: https://en.wiktionary.org/wiki/Wiktionary:Etymology
 
 
@@ -103,3 +100,5 @@ to comply with the fundamental concept of showing dependence through nesting.
 # TODO: query() is totally untested, because it is emulated by fetch_query(
 
 # TODO: for origins, show their old AND new o_id
+
+# TODO: Offline mode using a dump at https://dumps.wikimedia.org/enwiktionary/

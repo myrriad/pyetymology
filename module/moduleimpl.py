@@ -17,7 +17,7 @@ anti_macron = [
     ("Ȳ", "Y"),
     ("ȳ", "y")]
 
-def exceptioninfo(word: str, lang: str) -> Tuple[str, str]:
+def src_urlword(word: str, lang: str) -> Tuple[str, str]:
     urlword = mimicked_link_keyword(word, lang)
     return link(urlword), urlword
 

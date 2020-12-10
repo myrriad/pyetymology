@@ -78,23 +78,18 @@ class TestLlevar:
         res, dom = fetch_resdom("llevar", redundance=True)
         monkeypatch.setattr('builtins.input', lambda _: "Spanish")
 
-        v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
-            (list2 := (list(wx.sections_by_lang(dom, "Spanish")), "arbitrary#Spanish", "arbitrary", "Spanish"))
-        assert v
+        assert wx.auto_lang(dom) == (list(wx.sections_by_lang(dom, "Spanish")), "Spanish")
 
         monkeypatch.setattr('builtins.input', lambda _: "Catalan")
 
-        v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
-            (list2 := (list(wx.sections_by_lang(dom, "Catalan")), "arbitrary#Catalan", "arbitrary", "Catalan"))
-        assert v
+        assert wx.auto_lang(dom) == (list(wx.sections_by_lang(dom, "Catalan")), "Catalan")
 
     def test_auto_lang_failure(self, monkeypatch):
 
         res, dom = fetch_resdom("llevar", redundance=True)
         monkeypatch.setattr('builtins.input', lambda _: "English")
         with pytest.raises(MissingException) as e_info:
-            v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
-                (list2 := (list(wx.sections_by_lang(dom, "Spanish")), "arbitrary#Spanish", "arbitrary", "Spanish"))
+            wx.auto_lang(dom) == (list(wx.sections_by_lang(dom, "Spanish")), "Spanish")
 
         assert e_info.value.G is None
         assert e_info.value.missing_thing == "language_section"

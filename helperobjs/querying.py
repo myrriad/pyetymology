@@ -31,7 +31,7 @@ class ThickQuery():
         return (self.me, self.word, self.lang, self.def_id)
     @property
     def word_urlify(self):
-        return moduleimpl.exceptioninfo(self.word, self.lang)[0]
+        return moduleimpl.src_urlword(self.word, self.lang)[0]
     @property
     def wikitext_link(self):
         return moduleimpl.link(self.word_urlify)

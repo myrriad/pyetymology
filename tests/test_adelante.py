@@ -69,9 +69,7 @@ class TestAdelante:
         res, dom = fetch_resdom("adelante", redundance=True)
         monkeypatch.setattr('builtins.input', lambda _: "dummy_input")
 
-        v = (list1 := wx.auto_lang(dom, "unused#unused", "arbitrary", "")) == \
-            (list2 := (list(wx.sections_by_lang(dom, "Spanish")), "arbitrary#Spanish", "arbitrary", "Spanish"))
-        assert v
+        assert wx.auto_lang(dom) == (list(wx.sections_by_lang(dom, "Spanish")), "Spanish")
 
     def test_graph(self, monkeypatch):
         monkeypatch.setattr('builtins.input', lambda _: "1")  # Multiple Definitions

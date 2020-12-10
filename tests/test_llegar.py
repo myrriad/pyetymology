@@ -8,14 +8,14 @@ import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology import wikt_api as wx, etyobjects
+from pyetymology import wikt_api as wx, etyobjects, wikt_api
 from pyetymology import main
 from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
 
 from pyetymology.tests.assets import asset_llegar
-from pyetymology.tests.test_ import fetch_resdom, fetch_query, fetch_wikitext, is_eq__repr, patch_multiple_input
+from pyetymology.tests.test_ import fetch_resdom, fetch_query, fetch_wikitext, is_eq__repr, patch_multiple_input, graph_to_str
 
 G_llegaron = nx.DiGraph()
 nx.add_path(G_llegaron, ['$0L{es-verb form of|Spanish|llegar}', 'llegaron#Spanish$0'])
@@ -88,6 +88,13 @@ class TestLlegar:
         # wx.draw_graph(G_composed) # DID: this fails. Why? Answer: blank node_colors.
         # wx.draw_graph(GG2)
         assert is_eq__repr(GG, G_composed) # GG2 -> GG
+
+    def test_plico(self):
+        G_plico = main.mainloop(test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish"), ("plico", "Latin")], draw_graphs=False)[-1]
+        wikt_api.draw_graph(G_plico, pause=True)
+        assert graph_to_str(G_plico) == "{llegaron#Spanish$0: [], $0L{es-verb form of|Spanish|llegar}: [llegaron#Spanish$0], $0{inh|Latin|plicāre}: [$0L{es-verb form of|Spanish|llegar}], $0{m|Latin|plicō ['I fold']}: [$0{inh|Latin|plicāre}], $0{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$0{m|Latin|plicō ['I fold']}], $0{der|Proto-Italic|*plekāō}: [$0{m|Latin|plicō ['I fold']}], $0{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$0{der|Proto-Italic|*plekāō}]}"
+
+
         # TODO: origin indexing is broken with lemmas
 # [$0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 # GG2.nodes [llevaron#Spanish$0, $0L{es-verb form of|Spanish|llevar}, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]

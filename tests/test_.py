@@ -126,5 +126,6 @@ class Test:
         assert dom1 == dom2
 
 
-
+def graph_to_str(G):
+    return repr(nx.to_dict_of_lists(G))
 # TODO: Test Unsupported Titles

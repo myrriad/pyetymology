@@ -89,16 +89,9 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
         """
 
 
-    # TODO: Offline mode using a dump at https://dumps.wikimedia.org/enwiktionary/
 
-def hi():
-    print("hi")
-def do_mainloop():
-    print("doing mainloop!")
-    mainloop()
+
 if __name__ == "__main__":
     print("main")
-    hi()
     mainloop(None)
-    print("what?")
 
