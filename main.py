@@ -15,21 +15,21 @@ from pyetymology.tests import test_
 
 def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> List[nx.DiGraph]:
     original_query = ""  # lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#Spanish"#"Reconstruction:Proto-Italic/feiljos#"
-    etyobjects.reset_global_o_id()  # TODO: avoid global state in Originator
-    test_fetch_idx = 0
+    # etyobjects.reset_global_o_id()  # TODO: avoid global state in Originator
+    total_queries = 0
     _EXIT = object()
     retn = []
     def test_safe_query(original_query):
-        nonlocal test_fetch_idx
+        nonlocal total_queries
         nonlocal test_queries
         nonlocal _EXIT
         if test_queries:
-            if test_fetch_idx >= len(test_queries):
+            if total_queries >= len(test_queries):
                 return _EXIT
-            _q1 = test_.fetch_query(*test_queries[test_fetch_idx])
-            test_fetch_idx += 1
+            _q1 = test_.fetch_query(*test_queries[total_queries], query_id=total_queries)
         else:
-            _q1 = ety.query(original_query)
+            _q1 = ety.query(original_query, query_id=total_queries)
+        total_queries += 1
         return _q1
 
     #_q1 = test_safe_query(original_query)
@@ -39,11 +39,9 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
     #ety.draw_graph(GG)
     #_ = [print(x) for x in GG.nodes]
     GG = None
-    total_queries = 0
     while True:
         assert True
         _Q = test_safe_query("") # ask for another query from the user
-        total_queries += 1
         if _Q is _EXIT:  # exit condition
             retn.append(GG)
             return retn

@@ -198,7 +198,7 @@ def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], st
     return lang_secs, lang
 
 
-def query(me, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
+def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
     if not me:
         me = input("Enter a query: " + me)
     terms = me.split("#")
@@ -269,7 +269,7 @@ def query(me, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) ->
     assert lang
     assert len(me.split("#")) >= 2
 
-    origin = Originator(me)
+    origin = Originator(me, o_id=query_id)
     bigQ = ThickQuery(me=me, word=word, lang=lang, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
     return bigQ
 
@@ -493,7 +493,9 @@ def draw_graph(G, simple=False, pause=False):
     if node_colors:
         nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
     else:
-        nx.draw(G, pos=poses, with_labels=True)
+        global colors
+        node_colors = {node: colors[node.o_id] for node in G.nodes}
+        nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
 
     # x.draw_networkx_edges(G, pos=poses)
 

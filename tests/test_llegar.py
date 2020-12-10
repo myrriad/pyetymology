@@ -34,7 +34,7 @@ class TestLlegar:
 
     def test_graph(self, monkeypatch):
         # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
-        etyobjects.reset_global_o_id()
+        # etyobjects.reset_global_o_id()
         _Q = fetch_query("llegar", "Spanish")
         G = wx.graph(_Q)
         global G_llegar
@@ -48,7 +48,7 @@ class TestLlegar:
     # nodes: [llevar#Spanish$0, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 
     def test_lemma_llegaron(self):
-        etyobjects.reset_global_o_id()
+        # etyobjects.reset_global_o_id()
         _Q = fetch_query("llegaron", "Spanish")
         G = wx.graph(_Q)
         assert True
@@ -71,17 +71,17 @@ class TestLlegar:
 
         G_llegar_with_rorigin = nx.DiGraph()
         nx.add_path(G_llegar_with_rorigin,
-                    ["$0{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}", "$0{m|Latin|plicō ['I fold']}",
-                     "$0{inh|Latin|plicāre}", "$0L{es-verb form of|Spanish|llegar}"])
+                    ["$1{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}", "$1{m|Latin|plicō ['I fold']}",
+                     "$1{inh|Latin|plicāre}", "$0L{es-verb form of|Spanish|llegar}"])
 
         assert is_eq__repr(G2, G_llegar_with_rorigin)
 
         # fuse the graphs, which should now be connected because we fused and forced our tree G to use a preexisting origin.
         # GG2 = nx.compose(GG, G) GG2 -> GG
         G_composed = nx.DiGraph()
-        nx.add_path(G_composed, ["$0{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}",
-                                 "$0{m|Latin|plicō ['I fold']}",
-                                 '$0{inh|Latin|plicāre}',
+        nx.add_path(G_composed, ["$1{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}",
+                                 "$1{m|Latin|plicō ['I fold']}",
+                                 '$1{inh|Latin|plicāre}',
                                  '$0L{es-verb form of|Spanish|llegar}',
                                  'llegaron#Spanish$0'])
 
@@ -92,7 +92,7 @@ class TestLlegar:
     def test_plico(self):
         G_plico = main.mainloop(test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish"), ("plico", "Latin")], draw_graphs=False)[-1]
         wikt_api.draw_graph(G_plico, pause=True)
-        assert graph_to_str(G_plico) == "{llegaron#Spanish$0: [], $0L{es-verb form of|Spanish|llegar}: [llegaron#Spanish$0], $0{inh|Latin|plicāre}: [$0L{es-verb form of|Spanish|llegar}], $0{m|Latin|plicō ['I fold']}: [$0{inh|Latin|plicāre}], $0{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$0{m|Latin|plicō ['I fold']}], $0{der|Proto-Italic|*plekāō}: [$0{m|Latin|plicō ['I fold']}], $0{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$0{der|Proto-Italic|*plekāō}]}"
+        assert graph_to_str(G_plico) == "{llegaron#Spanish$0: [], $0L{es-verb form of|Spanish|llegar}: [llegaron#Spanish$0], $1{inh|Latin|plicāre}: [$0L{es-verb form of|Spanish|llegar}], $1{m|Latin|plicō ['I fold']}: [$1{inh|Latin|plicāre}], $1{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$1{m|Latin|plicō ['I fold']}], $2{der|Proto-Italic|*plekāō}: [$1{m|Latin|plicō ['I fold']}], $2{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$2{der|Proto-Italic|*plekāō}]}"
 
 
         # TODO: origin indexing is broken with lemmas

@@ -9,10 +9,21 @@ import mwparserfromhell
 from pyetymology.langcode import langcodes
 from pyetymology.module import moduleimpl
 
+
+@property
+def originator_id_incrementer():
+    raise Exception("Deprecated")
+
+
+@originator_id_incrementer.setter
+def originator_id_incrementer(a):
+    raise Exception("Deprecated")
 originator_id_incrementer = 0
 
 
 def reset_global_o_id():
+    raise Exception("Deprecated")
+
     global originator_id_incrementer
     originator_id_incrementer = 0
 
@@ -23,9 +34,12 @@ class Originator:
         self.me = me
 
         if o_id is None:
+
             global originator_id_incrementer
             self.o_id = originator_id_incrementer
             originator_id_incrementer += 1
+            raise Exception("Deprecated")
+
         else:
             self.o_id = o_id
 

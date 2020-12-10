@@ -25,12 +25,14 @@ def fetch_wikitext(topic):
             f2.write(wikitext)
         return wikitext
 
-def fetch_query(topic: str, lang: str) -> ThickQuery:
+def fetch_query(topic: str, lang: str, query_id:int=0) -> ThickQuery:
     # monkeypatch.setattr('builtins.input', lambda _: lang)
     try:
         with open("assets/query_" + topic + "_" + lang + ".txt", 'rb') as f:
             pickleme = dill.load(f)
-            query, wikiresponse, origin = pickleme
+            query, wikiresponse, _ = pickleme
+            origin = Originator(query[0], o_id=query_id)
+
             _, wikitext, dom = wikiresponse
 
             """
@@ -50,10 +52,10 @@ def fetch_query(topic: str, lang: str) -> ThickQuery:
             return bigQ
     except FileNotFoundError as error:
         print('Asset not found! Creating...')
-        query, wikiresponse, origin = wx.query(topic, mimic_input=lang).to_tupled()
+        query, wikiresponse, origin = wx.query(topic, mimic_input=lang, query_id=query_id).to_tupled()
         _, wikitext, dom = wikiresponse
         wikiresponse = None, str(wikitext), str(dom)
-        pickleme = query, wikiresponse, origin
+        pickleme = query, wikiresponse, None # because origin id might change from query to query, don't pickle origin
         with open("assets/query_" + topic + "_" + lang + ".txt", "wb") as output:
             dill.dump(pickleme, output, dill.HIGHEST_PROTOCOL)
 

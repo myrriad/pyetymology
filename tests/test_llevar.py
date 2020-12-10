@@ -96,7 +96,7 @@ class TestLlevar:
 
 
     def test_graph(self, monkeypatch):
-        etyobjects.reset_global_o_id()
+        # etyobjects.reset_global_o_id()
         # monkeypatch.setattr('builtins.input', lambda _: "1") #Multiple Definitions
         fetched_Q = fetch_query("llevar", "Spanish")
         G = wx.graph(fetched_Q)
@@ -111,7 +111,7 @@ class TestLlevar:
     # nodes: [llevar#Spanish$0, $0{inh|Old Spanish|levar}, $0{inh|Latin|levāre}, $0{m|Latin|levō}]
 
     def test_lemma_llevaron(self):
-        etyobjects.reset_global_o_id()
+        # etyobjects.reset_global_o_id()
 
         fetched_Q = fetch_query("llevaron", "Spanish")
         G = wx.graph(fetched_Q)
@@ -146,12 +146,12 @@ class TestLlevar:
         assert is_eq__repr(G1, G_llevaron)
 
         G_llevar_with_rorigin = nx.DiGraph()
-        nx.add_path(G_llevar_with_rorigin, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}'])
+        nx.add_path(G_llevar_with_rorigin, ['$1{m|Latin|levō}', '$1{inh|Latin|levāre}', '$1{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}'])
         assert is_eq__repr(G2, G_llevar_with_rorigin)
 
         # GG2 -> GG
         G_composed = nx.DiGraph()
-        nx.add_path(G_composed, ['$0{m|Latin|levō}', '$0{inh|Latin|levāre}', '$0{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}', 'llevaron#Spanish$0'])
+        nx.add_path(G_composed, ['$1{m|Latin|levō}', '$1{inh|Latin|levāre}', '$1{inh|Old Spanish|levar}', '$0L{es-verb form of|Spanish|llevar}', 'llevaron#Spanish$0'])
 
         # wx.draw_graph(G_composed) # DID: this fails. Why? Answer: blank node_colors.
         assert is_eq__repr(GG, G_composed)

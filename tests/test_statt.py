@@ -17,7 +17,7 @@ from pyetymology.tests.test_ import fetch_resdom, fetch_query
 
 class TestStatt:
     def test_missing_definition_graph(self):
-        etyobjects.reset_global_o_id()
+        # etyobjects.reset_global_o_id()
 
         fetched_Q = fetch_query("statt", "German")
         # TODO: investigate the effect of flattening on this line

@@ -19,7 +19,7 @@ def test_to_dict_of_lists_equivalence():
     assert dl == dl2
 
 def test_graph_eq():
-    etyobjects.reset_global_o_id()
+    # etyobjects.reset_global_o_id()
 
     _Q = test_.fetch_query("prototype", "English")
     G = wikt_api.graph(_Q)
