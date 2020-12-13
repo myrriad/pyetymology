@@ -9,12 +9,12 @@ from pyetymology.module import moduleimpl
 
 class ThickQuery():
     def __init__(self,
-                 me: str, word: str, lang: str, def_id: str,
+                 me: str, word: str, langname: str, def_id: str,
                  res: Wikicode, wikitext: str, dom: List[Wikicode],
                  origin: Originator):
         self.me = me
         self.word = word
-        self.lang = lang
+        self.lang = langname
         self.def_id = def_id
 
         self.res = res
@@ -31,10 +31,10 @@ class ThickQuery():
         return (self.me, self.word, self.lang, self.def_id)
     @property
     def word_urlify(self):
-        return moduleimpl.src_urlword(self.word, self.lang)[0]
+        return moduleimpl.urlword(self.word, self.lang)
     @property
     def wikitext_link(self):
-        return moduleimpl.link(self.word_urlify)
+        return moduleimpl.to_link(self.word_urlify)
 
 
 def from_tupled(query: Tuple[str, str, str, str], wikiresponse: Tuple[Wikicode, str, List[Wikicode]], origin: Originator):

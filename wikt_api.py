@@ -10,6 +10,7 @@ import mwparserfromhell as mwp
 import requests
 from mwparserfromhell.wikicode import Wikicode
 
+from pyetymology.helperobjs import query2
 from pyetymology.helperobjs.querying import ThickQuery
 from pyetymology.langcode.cache import Cache
 import grandalf.utils as grutils
@@ -151,7 +152,7 @@ Returns sections of only 1 lang
 """
 
 
-def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], str, str, str]:
+def reduce_to_one_lang_sec(dom: List[Wikicode], use_lang=None, permit_abbrevs=True) -> Tuple[List[Wikicode], str, str, str]:
     lang = ""
     # try to extract lang from dom
     found_langs = all_lang_sections(dom, flat=True)
@@ -169,19 +170,18 @@ def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], st
         lang = lang_options[0]
     else:
         while not lang or lang == "" or lang is None:
-            if mimic_input:
-                lang = mimic_input
+            if use_lang:
+                usrin = use_lang
             else:
-                lang = None
                 usrin = input("Choose a lang from these options: " + str(lang_options))
-                if usrin in lang_options:
-                    lang = usrin
-                else:
-                    for lang_opt in lang_options: # abbreviations
-                        if str.lower(lang_opt).startswith(str.lower(usrin)):
-                            lang = lang_opt
-                if lang is None:
-                    raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
+            if usrin in lang_options:
+                lang = usrin
+            elif permit_abbrevs:
+                for lang_opt in lang_options: # abbreviations
+                    if str.lower(lang_opt).startswith(str.lower(usrin)):
+                        lang = lang_opt
+            if lang is None:
+                raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
 
     # me = word + "#" + lang
     lang_secs = list(sections_by_lang(dom, lang))
@@ -195,36 +195,17 @@ def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], st
 def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
     if not me:
         me = input("Enter a query: " + me)
-    terms = me.split("#")
 
     found = False
     if working_G:
         node = find_existent_query(working_G, me)
-        if node:
-            word = node.word
-            if node.lang:
-                lang = node.lang # this is necessary for say Latin plico. We find the existing template from the suggestion,
-                # then we deduct the actual word and lang
-            else:
-                lang = ""
-            found = True
-    def_id = None
+        word, langname, def_id = query2.node_to_qparts(node)
+        found = word or langname
     if not found:
-        if len(terms) == 1:
-            word = me
-            # lang = input("Language not detected! Please input one: ")
-            lang = ""
-        elif len(terms) == 2:
-            word, lang = terms
-        elif len(terms) == 3:
-            word, lang, def_id = terms
-        else:
-            raise Exception(
-                f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
-
+        word, langname, def_id = query2.query_to_qparts(me)
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src, word_urlify = moduleimpl.src_urlword(word, lang) # we take the word and lang and parse it into the corresponding wikilink
+    src = moduleimpl.to_link(word, langname) # we take the word and lang and parse it into the corresponding wikilink
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
@@ -234,12 +215,9 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         res = session.get(src)
 
 
-        #cache res
-        with open('response.pkl', 'wb') as output:
-            pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
+        #cache res TODO: implement better caching with test_'s fetch stuff
     else:
-        with open('response.pkl', 'rb') as _input:
-            res = pickle.load(_input)
+        raise Exception("offline browsing not implemented yet")
 
     txt = res.text
     jsn = json.loads(txt) #type: json
@@ -247,7 +225,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         wikitext = jsn["parse"]["wikitext"]
     elif "error" in jsn:
         print(src)
-        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
+        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, langname)}")
         raise MissingException("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]), missing_thing="Everything")
     else:
         raise Exception("Response malformed!" + str(jsn))
@@ -256,15 +234,13 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     res, dom = wikitextparse(wikitext, redundance=redundance)
     # Here was the lang detection
 
-    dom, lang = auto_lang(dom, mimic_input=mimic_input)
-    me = word + "#" + lang
-    assert me
+    dom, langname = reduce_to_one_lang_sec(dom, use_lang=mimic_input if mimic_input else langname)
+    me = word + "#" + langname
     assert word
-    assert lang
-    assert len(me.split("#")) >= 2
+    assert langname
 
     origin = Originator(me, o_id=query_id)
-    bigQ = ThickQuery(me=me, word=word, lang=lang, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
+    bigQ = ThickQuery(me=me, word=word, langname=langname, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
     return bigQ
 
 

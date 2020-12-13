@@ -17,25 +17,23 @@ anti_macron = [
     ("Ȳ", "Y"),
     ("ȳ", "y")]
 
-def src_urlword(word: str, lang: str) -> Tuple[str, str]:
-    urlword = mimicked_link_keyword(word, lang)
-    return link(urlword), urlword
+def to_link(word_or_urlword: str, lang_or_none:str = None):
+    if lang_or_none is None:
+        return urlword_to_link(word_or_urlword)
+    else:
+        return qparts_to_link(word_or_urlword, lang_or_none)
+
+def qparts_to_link(word: str, lang: str):
+    return urlword_to_link(urlword(word, lang))
+
+def urlword_to_link(urlword: str):
+    link = "https://en.wiktionary.com/w/api.php?action=parse&page=" + urlword + "&prop=wikitext&formatversion=2&format=json"
+    return link
 
 def urlword(word: str, lang: str) -> str:
     return mimicked_link_keyword(word, lang)
 
-"""
-EITHER:
-1) a is word, b is lang, OR:
-2) a is urlword
-"""
-def link(a: str, b: str=None) -> str:
-    if b is None:
-        urlword_ = a
-    else:
-        urlword_ = urlword(a, b)
-    link = "https://en.wiktionary.com/w/api.php?action=parse&page=" + urlword_ + "&prop=wikitext&formatversion=2&format=json"
-    return link
+
 
 
 
