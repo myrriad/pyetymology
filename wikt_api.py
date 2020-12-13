@@ -52,16 +52,12 @@ def has_exact_prefix(str, prefix):
     return str.startswith(prefix) and not str.startswith(prefix + "=")
 
 
-"""
-Takes in parameter l, which corresponds to a "main" heading level.
-Yields each "main" header of that specified heading level.
-If there is a subheader, it will be packaged after the specified main header that precedes it
-
-"""
-
-
 def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[Wikicode, None, None]:
-
+    """
+    Takes in parameter l, which corresponds to a "main" heading level.
+    Yields each "main" header of that specified heading level.
+    If there is a subheader, it will be packaged after the specified main header that precedes it
+    """
 
     in_section = False
     prefix = "=" * level
@@ -127,12 +123,10 @@ def is_in(elem, abbr_set: Dict[str, str]):
     return elem in abbr_set.keys() or elem in abbr_set.values()
 
 
-"""
-Returns the node that contains the originator; otherwise returns false
-"""
-
-
 def contains_originator(G: nx.Graph, origin: Originator):
+    """
+    Returns the node that contains the originator; otherwise returns false
+    """
     for node in G.nodes:
         if isinstance(node, EtyRelation):
             node: EtyRelation
