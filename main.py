@@ -48,7 +48,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
 
         query_origin = _Q.origin
         if GG:
-            GG_origin = ety.contains_originator(GG, query_origin)
+            GG_origin = ety.find_originator_node(GG, query_origin)
         else:
             GG_origin = None
         # We want to connect these two graphs,

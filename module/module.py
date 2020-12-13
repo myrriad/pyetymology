@@ -3,6 +3,39 @@
 import urllib
 from typing import Tuple
 
+
+# TODO: test all of this for reconstructed
+
+def get_link_urlword(word: str, lang: str) -> Tuple[str, str]:
+    urlword = mimicked_link_keyword(word, lang)
+    return link(urlword), urlword
+
+
+"""
+Function overload for
+a) link_f_urlword(urlword, None) (link from urlword)
+b) link_f_word_lang(word, lang)
+"""
+def link(a: str, b: str=None) -> str:
+    if b is None:
+        # link_f_urlword
+        return link_f_urlword(a)
+    else:
+        # get urlword from word, lang
+        urlword_ = urlword(a, b)
+        return link_f_urlword(urlword_)
+
+
+
+def urlword(word: str, lang: str) -> str:
+    return mimicked_link_keyword(word, lang)
+
+
+"""
+Below is Implementations for urlword()
+"""
+
+
 anti_macron = [
     ("Ā", "A"),
     ("ā", "a"),
@@ -16,28 +49,6 @@ anti_macron = [
     ("ū", "u"),
     ("Ȳ", "Y"),
     ("ȳ", "y")]
-
-def src_urlword(word: str, lang: str) -> Tuple[str, str]:
-    urlword = mimicked_link_keyword(word, lang)
-    return link(urlword), urlword
-
-def urlword(word: str, lang: str) -> str:
-    return mimicked_link_keyword(word, lang)
-
-"""
-EITHER:
-1) a is word, b is lang, OR:
-2) a is urlword
-"""
-def link(a: str, b: str=None) -> str:
-    if b is None:
-        urlword_ = a
-    else:
-        urlword_ = urlword(a, b)
-    link = "https://en.wiktionary.com/w/api.php?action=parse&page=" + urlword_ + "&prop=wikitext&formatversion=2&format=json"
-    return link
-
-
 
 def mimicked_link_keyword(word: str, lang: str) -> Tuple[str, str]:
     if lang == "Latin":

@@ -1,13 +1,13 @@
 import string
 import warnings
-from typing import Tuple, Any
+from typing import Any, Tuple
 
 import networkx as nx
 
 import mwparserfromhell
 
 from pyetymology.langcode import langcodes
-from pyetymology.module import moduleimpl
+from pyetymology.module import module
 
 
 @property
@@ -67,20 +67,13 @@ class Affixal:
 class WordRelation:
     def matches_query(self, me:str, word:str=None, lang:str=None, def_id:str=None) -> bool:
         if me:
-            terms = me.split("#")
-            def_id = None
-            if len(terms) == 1:
-                word = me
-                warnings.warn("Language not detected for query " + me)
+            word, lang, def_id = lyse_query(me)
+            if not lang:
                 return self.word == word
-            elif len(terms) == 3:
-                warnings.warn("definition ids not supported yet")
-                word, lang, _ = terms
-            elif len(terms) == 2:
-                word, lang = terms
-            else:
-                raise ValueError(f"query {terms} has unexpected number of terms")
-        return moduleimpl.matches(self.word, self.langname, word, lang)  # TODO: NOT iterate through entire graph when trying to find a match
+            return module.matches(self.word, self.langname, word, lang)
+            # TODO: NOT iterate through entire graph when trying to find a match
+            # TODO: test if reconstruction thingy works
+
 
 class EtyRelation(WordRelation):
     ety_abbrs = {"derived": "der",
@@ -261,3 +254,24 @@ class MissingException(Exception):
         super().__init__(self, message)
         self.G = G
         self.missing_thing = missing_thing
+
+
+def lyse_query(me: str) -> Tuple[str, str, str]:
+    terms = me.split("#")
+    def_id = None
+    if len(terms) == 1:
+        word = me
+        warnings.warn("Language not detected for query " + me)
+        # return self.word == word
+        lang = ""
+    elif len(terms) == 2:
+        word, lang = terms
+    elif len(terms) == 3:
+        warnings.warn("definition ids not supported yet")  # TODO: support def_ids
+        word, lang, _ = terms
+    else:
+        raise ValueError(f"query {terms} has unexpected number of terms")
+    if lang.startswith("R:"):
+        lang = "Reconstruction:" + lang[2:]  # len("R:") == 2
+        # Allow R: as an abbreviation for Reconstructed langs
+    return word, lang, def_id

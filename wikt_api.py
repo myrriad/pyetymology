@@ -10,8 +10,12 @@ import mwparserfromhell as mwp
 import requests
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology.helperobjs.querying import ThickQuery
+import pyetymology.helperobjs.queryobj
+
+from pyetymology.helperobjs import queryobj
+from pyetymology.helperobjs.queryobj import ThickQuery, SlimQuery
 from pyetymology.langcode.cache import Cache
+
 import grandalf.utils as grutils
 import networkx as nx
 
@@ -20,8 +24,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import pyetymology.etyobjects
-from pyetymology import simple_sugi, lexer
+from pyetymology import simple_sugi, lexer, etyobjects
 import pyetymology.langcode as langcode
+
 
 ### START helper_api.py
 from typing import List, Generator, Dict, Any, Tuple
@@ -31,7 +36,7 @@ import mwparserfromhell
 
 from pyetymology.etyobjects import EtyRelation, Originator, LemmaRelation, MissingException
 from pyetymology.lexer import Header
-from pyetymology.module import moduleimpl
+from pyetymology.module import module
 
 
 def input(__prompt: Any) -> str:
@@ -52,16 +57,15 @@ def has_exact_prefix(str, prefix):
     return str.startswith(prefix) and not str.startswith(prefix + "=")
 
 
-"""
-Takes in parameter l, which corresponds to a "main" heading level.
-Yields each "main" header of that specified heading level.
-If there is a subheader, it will be packaged after the specified main header that precedes it
 
-"""
 
 
 def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[Wikicode, None, None]:
-
+    """
+    Takes in parameter l, which corresponds to a "main" heading level.
+    Yields each "main" header of that specified heading level.
+    If there is a subheader, it will be packaged after the specified main header that precedes it
+    """
 
     in_section = False
     prefix = "=" * level
@@ -127,23 +131,29 @@ def is_in(elem, abbr_set: Dict[str, str]):
     return elem in abbr_set.keys() or elem in abbr_set.values()
 
 
-"""
-Returns the node that contains the originator; otherwise returns false
-"""
+def find_originator_node(G: nx.Graph, origin: Originator):
+    """
+    Returns the node that equals the originator; otherwise returns None
+    """
+    return find_node_by_query(G, origin.me)
 
 
-def contains_originator(G: nx.Graph, origin: Originator):
-    for node in G.nodes:
-        if isinstance(node, EtyRelation):
+def find_node_by_query(GG: nx.DiGraph, query: str):
+    # _ = [print(x) for x in GG.nodes]
+    for node in GG.nodes:
+        if type(node) is EtyRelation:
             node: EtyRelation
-            if node.matches_query(origin.me):
+            if node.matches_query(query):
                 return node
-        if isinstance(node, LemmaRelation):
+        elif type(node) is LemmaRelation:
             node: LemmaRelation
-            if node.matches_query(origin.me):
+            if node.matches_query(query):
                 return node
+        elif type(node) is Originator:
+            warnings.warn("Query is it matching an originator? Duplicate query?")
+        else:
+            raise ValueError(f"node has unexpected type {type(node)}")
     return None
-
 
 def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     res = mwp.parse(wikitext)  # type: Wikicode
@@ -152,12 +162,13 @@ def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikic
     return res, dom
 
 
-"""
-Returns sections of only 1 lang
-"""
 
 
-def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], str, str, str]:
+
+def auto_lang(dom: List[Wikicode], use_lang=None) -> Tuple[List[Wikicode], str, str, str]:
+    """
+    Returns sections of only 1 lang
+    """
     lang = ""
     # try to extract lang from dom
     found_langs = all_lang_sections(dom, flat=True)
@@ -175,19 +186,19 @@ def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], st
         lang = lang_options[0]
     else:
         while not lang or lang == "" or lang is None:
-            if mimic_input:
-                lang = mimic_input
+            lang = None
+            if use_lang:
+                usrin = use_lang
             else:
-                lang = None
                 usrin = input("Choose a lang from these options: " + str(lang_options))
-                if usrin in lang_options:
-                    lang = usrin
-                else:
-                    for lang_opt in lang_options: # abbreviations
-                        if str.lower(lang_opt).startswith(str.lower(usrin)):
-                            lang = lang_opt
-                if lang is None:
-                    raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
+            if usrin in lang_options:
+                lang = usrin
+            else:
+                for lang_opt in lang_options: # abbreviations
+                    if str.lower(lang_opt).startswith(str.lower(usrin)):
+                        lang = lang_opt
+            if lang is None:
+                raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
 
     # me = word + "#" + lang
     lang_secs = list(sections_by_lang(dom, lang))
@@ -201,59 +212,32 @@ def auto_lang(dom: List[Wikicode], mimic_input=None) -> Tuple[List[Wikicode], st
 def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
     if not me:
         me = input("Enter a query: " + me)
-    terms = me.split("#")
 
-    found = False
+    usrq = None
     if working_G:
-        node = find_existent_query(working_G, me)
-        if node:
-            word = node.word
-            if node.lang:
-                lang = node.lang # this is necessary for say Latin plico. We find the existing template from the suggestion,
-                # then we deduct the actual word and lang
-            else:
-                lang = ""
-            found = True
-    def_id = None
-    if not found:
-        if len(terms) == 1:
-            word = me
-            # lang = input("Language not detected! Please input one: ")
-            lang = ""
-        elif len(terms) == 2:
-            word, lang = terms
-        elif len(terms) == 3:
-            word, lang, def_id = terms
-        else:
-            raise Exception(
-                f'Query string "{me}" has an unsupported number of arguments! There should be either one or two \'#\'s only,')
+        node = find_node_by_query(working_G, me)
 
-    # word_urlify = urllib.parse.quote_plus(word)
-    # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src, word_urlify = moduleimpl.src_urlword(word, lang) # we take the word and lang and parse it into the corresponding wikilink
-    # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
-    # TODO: and to load the page we need to know the word_urlify
-    # TODO: and word_urlify must remove macrons
+        if node:
+            usrq = SlimQuery.from_node(node)
+    if not usrq:
+        usrq = SlimQuery.from_str(me)
+    usrq: SlimQuery
     # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
     if online:
         global session
-        res = session.get(src)
-
-
+        res = session.get(usrq.api_link())
         #cache res
-        with open('response.pkl', 'wb') as output:
-            pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
+        # this caching mechanism is bad and only caches 1. use test_'s caching mechanism instead.
     else:
-        with open('response.pkl', 'rb') as _input:
-            res = pickle.load(_input)
+        raise Exception("Offline not yet implemented")
 
     txt = res.text
     jsn = json.loads(txt) #type: json
     if "parse" in jsn:
         wikitext = jsn["parse"]["wikitext"]
     elif "error" in jsn:
-        print(src)
-        print(f"https://en.wiktionary.org/wiki/{word_urlify}")
+        print(usrq.api_link())
+        print(usrq.raw_link())# f"https://en.wiktionary.org/wiki/{word_urlify}")
         raise MissingException("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]), missing_thing="Everything")
     else:
         raise Exception("Response malformed!" + str(jsn))
@@ -262,38 +246,17 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     res, dom = wikitextparse(wikitext, redundance=redundance)
     # Here was the lang detection
 
-    dom, lang = auto_lang(dom, mimic_input=mimic_input)
-    me = word + "#" + lang
-    assert me
-    assert word
+    dom, lang = auto_lang(dom, use_lang=mimic_input if mimic_input else usrq.lang)
+    assert usrq.word
+    # me = word + "#" + lang
     assert lang
-    assert len(me.split("#")) >= 2
-
     origin = Originator(me, o_id=query_id)
-    bigQ = ThickQuery(me=me, word=word, lang=lang, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
+    bigQ = ThickQuery(word=usrq.word, lang=lang, def_id=usrq.def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
     return bigQ
 
 
-
-def find_existent_query(GG: nx.DiGraph, query: str):
-    # _ = [print(x) for x in GG.nodes]
-    for node in GG.nodes:
-        if type(node) is EtyRelation:
-            node: EtyRelation
-            if node.matches_query(query):
-                return node
-        elif type(node) is LemmaRelation:
-            node: LemmaRelation
-            if node.matches_query(query):
-                return node
-        elif type(node) is Originator:
-            warnings.warn("Why is it matching the originator?")
-        else:
-            raise ValueError(f"node has unexpected type {type(node)}")
-
-
-def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False) -> nx.DiGraph:
-    me, word, lang, def_id = _Query.query
+def parse_and_graph(_Query: ThickQuery, existent_node: EtyRelation=None, make_mentions_sideways=False) -> nx.DiGraph:
+    me, word, lang, def_id = _Query.query_tupled()
     dom = _Query.dom
     query_origin = _Query.origin
     existent_origin = existent_node if existent_node else query_origin # TODO: pass replacement_origin through origin constructor to wrap and create an origin _id
@@ -471,7 +434,7 @@ def graph(_Query: ThickQuery, replacement_origin=None) -> nx.DiGraph:
 # addition F55D3E-
 colors = ["#B1D4E0", "#2E8BC0", "#878E88", "#F7CB15", "#76BED0", "#0C2D48", "#145DA0", "#1f78b4"]  #
 
-def draw_graph(G, simple=False, pause=False):
+def draw_graph(G, simple=False, pause=False, auto_color=True):
     print("...drawing graph...")
 
     if simple:
@@ -491,11 +454,14 @@ def draw_graph(G, simple=False, pause=False):
 
     node_colors = nx.get_node_attributes(G, 'color')
     if node_colors:
-        nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
+        node_colors = node_colors.values()
     else:
-        global colors
-        node_colors = {node: colors[node.o_id] for node in G.nodes}
-        nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
+        if auto_color:
+            global colors
+            node_colors = [colors[node.o_id] for node in G.nodes]
+        else:
+            node_colors = "#1f78b4" # ( default color)
+    nx.draw(G, pos=poses, with_labels=True, node_color=node_colors)
 
     # x.draw_networkx_edges(G, pos=poses)
 

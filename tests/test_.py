@@ -6,8 +6,8 @@ from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology import wikt_api as wx, etyobjects
 from pyetymology.etyobjects import Originator
-from pyetymology.helperobjs import querying
-from pyetymology.helperobjs.querying import ThickQuery
+from pyetymology.helperobjs import queryobj
+from pyetymology.helperobjs.queryobj import ThickQuery
 
 
 def fetch_wikitext(topic):
@@ -47,7 +47,7 @@ def fetch_query(topic: str, lang: str, query_id:int=0) -> ThickQuery:
             dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
 
             wikiresponse = None, res, dom
-            bigQ = querying.from_tupled(query, wikiresponse, origin)
+            bigQ = ThickQuery.from_tupled(query, wikiresponse, origin)
             # TODO eliminate global state
             return bigQ
     except FileNotFoundError as error:
@@ -69,7 +69,7 @@ def fetch_query(topic: str, lang: str, query_id:int=0) -> ThickQuery:
         res, dom = wx.wikitextparse(wikitext, redundance=True)
         dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
         wikiresponse = None, res, dom
-        bigQ = querying.from_tupled(query, wikiresponse, origin)
+        bigQ = ThickQuery.from_tupled(query, wikiresponse, origin)
          # don't do it over here because it is already done
         return bigQ
 def fetch_resdom(topic, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:

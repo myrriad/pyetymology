@@ -102,3 +102,6 @@ to comply with the fundamental concept of showing dependence through nesting.
 # TODO: for origins, show their old AND new o_id
 
 # TODO: Offline mode using a dump at https://dumps.wikimedia.org/enwiktionary/
+
+
+# TODO: shift to using template.get("1") instead of template.params[0]
