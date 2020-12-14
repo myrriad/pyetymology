@@ -59,7 +59,7 @@ class TestLlegar:
         assert [(repr(l), repr(r)) for l, r in G.edges] == [e for e in reversed(list(G2.edges))]
 
     def test_connection(self, monkeypatch):
-        Gs = main.mainloop(test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish")])
+        Gs = main.mainloop(draw_graphs=False, test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish")])
 
         print(Gs)
         assert len(Gs) == 3
@@ -90,7 +90,7 @@ class TestLlegar:
         assert is_eq__repr(GG, G_composed) # GG2 -> GG
 
     def test_plico(self):
-        G_plico = main.mainloop(test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish"), ("plico", "Latin")], draw_graphs=False)[-1]
+        G_plico = main.mainloop(draw_graphs=False, test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish"), ("plico", "Latin")])[-1]
         wikt_api.draw_graph(G_plico, pause=True)
         assert graph_to_str(G_plico) == "{llegaron#Spanish$0: [], $0L{es-verb form of|Spanish|llegar}: [llegaron#Spanish$0], $1{inh|Latin|plicāre}: [$0L{es-verb form of|Spanish|llegar}], $1{m|Latin|plicō ['I fold']}: [$1{inh|Latin|plicāre}], $1{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$1{m|Latin|plicō ['I fold']}], $2{der|Proto-Italic|*plekāō}: [$1{m|Latin|plicō ['I fold']}], $2{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$2{der|Proto-Italic|*plekāō}]}"
 

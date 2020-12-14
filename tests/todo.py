@@ -102,3 +102,5 @@ to comply with the fundamental concept of showing dependence through nesting.
 # TODO: for origins, show their old AND new o_id
 
 # TODO: Offline mode using a dump at https://dumps.wikimedia.org/enwiktionary/
+
+# TODO: test auto_lang. For example test "llegar"

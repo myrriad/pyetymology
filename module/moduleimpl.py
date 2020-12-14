@@ -1,7 +1,45 @@
 
 # https://en.wiktionary.org/wiki/Module:links
 import urllib
-from typing import Tuple
+import warnings
+from typing import Tuple, Union
+
+from pyetymology.helperobjs.langhelper import Lang
+
+def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None):
+    if lang_or_none is None:
+        _urlword = word_or_urlword
+        return "https://en.wiktionary.com/w/api.php?action=parse&page=" + _urlword + "&prop=wikitext&formatversion=2&format=json"
+    else:
+        word = word_or_urlword
+        lang = lang_or_none
+        if isinstance(lang, str):
+            return to_link(urlword(word=word, lang=lang))
+        elif isinstance(lang, Lang):
+            return to_link(urlword(word=word, lang=lang))
+        else:
+            raise TypeError(f"lang has unexpected type {type(lang)}")
+
+def urlword(word: str, lang: Union[str, Lang, None]) -> str:  # TODO: test this
+
+    if isinstance(lang, str):
+        return mimicked_link_keyword(word, lang)
+    if lang:
+        assert isinstance(lang, Lang)
+        if lang.reconstr:
+            urllang = urllib.parse.quote_plus(lang.langname.replace(" ", "-"))  # TODO: refine this
+            assert isinstance(lang.langname, str)
+            return "Reconstruction:" + urllang + "/" + urlword(word, lang.langname)
+        else:
+            return urlword(word, lang.langname)
+        raise TypeError(f"lang has unexpected type {type(lang)}!")
+    else:
+        warnings.warn("retrieving urlword without a lang! language-deterministic checks such as macrons won't work!")
+        return mimicked_link_keyword(word)
+
+
+
+# Below are implementations of urlword(word, lang: str)
 
 anti_macron = [
     ("Ā", "A"),
@@ -16,28 +54,7 @@ anti_macron = [
     ("ū", "u"),
     ("Ȳ", "Y"),
     ("ȳ", "y")]
-
-def to_link(word_or_urlword: str, lang_or_none:str = None):
-    if lang_or_none is None:
-        return urlword_to_link(word_or_urlword)
-    else:
-        return qparts_to_link(word_or_urlword, lang_or_none)
-
-def qparts_to_link(word: str, lang: str):
-    return urlword_to_link(urlword(word, lang))
-
-def urlword_to_link(urlword: str):
-    link = "https://en.wiktionary.com/w/api.php?action=parse&page=" + urlword + "&prop=wikitext&formatversion=2&format=json"
-    return link
-
-def urlword(word: str, lang: str) -> str:
-    return mimicked_link_keyword(word, lang)
-
-
-
-
-
-def mimicked_link_keyword(word: str, lang: str) -> Tuple[str, str]:
+def mimicked_link_keyword(word: str, lang: str=None) -> Tuple[str, str]:
     if lang == "Latin":
         for a, b in anti_macron:
             word = word.replace(a, b)

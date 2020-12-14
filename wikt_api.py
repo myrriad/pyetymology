@@ -153,7 +153,7 @@ Returns sections of only 1 lang
 """
 
 
-def reduce_to_one_lang(dom: List[Wikicode], use_lang=None, permit_abbrevs=True) -> Tuple[List[Wikicode], str, str, str]:
+def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=True) -> Tuple[List[Wikicode], str, str, str]:
     lang = ""
     # try to extract lang from dom
     found_langs = all_lang_sections(dom, flat=True)
@@ -190,6 +190,7 @@ def reduce_to_one_lang(dom: List[Wikicode], use_lang=None, permit_abbrevs=True) 
     if not lang_secs:
         raise MissingException(f"No entry was found in wikitext under language {lang} !? !? "
                                f"(Unless there is a bug, this exception shouldn't be called!) DOM: \n\t{repr(dom)}", missing_thing="language_section")
+    assert lang
     return lang_secs, lang
 
 
@@ -200,15 +201,15 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     found = False
     if working_G:
         node = find_existent_query(working_G, me)
-        word, lang, def_id = query2.node_to_qparts(node)
-        found = word or lang
+        word, biglang, def_id = query2.node_to_qparts(node)
+        found = word or biglang
     if not found:
-        word, lang, def_id = query2.query_to_qparts(me)
-    if lang is None:
-        lang = Lang()
+        word, biglang, def_id = query2.query_to_qparts(me)
+    if biglang is None:
+        biglang = Lang()
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src = moduleimpl.to_link(word, lang.langname) # we take the word and lang and parse it into the corresponding wikilink
+    src = moduleimpl.to_link(word, biglang) # we take the word and lang and parse it into the corresponding wikilink
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
@@ -226,7 +227,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         wikitext = jsn["parse"]["wikitext"]
     elif "error" in jsn:
         print(src)
-        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, lang.langname)}")
+        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang)}")
         raise MissingException("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]), missing_thing="Everything")
     else:
         raise Exception("Response malformed!" + str(jsn))
@@ -235,14 +236,17 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     res, dom = wikitextparse(wikitext, redundance=redundance)
     # Here was the lang detection
 
-    dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else lang.langname)
-    me = word + "#" + langname
+    dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else biglang.langname)
+    assert langname
+    if not biglang:
+        biglang = Lang(langname=langname)
+    me = word + "#" + biglang.langqstr  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
     assert word
     assert langname
 
     origin = Originator(me, o_id=query_id)
-    bigQ = ThickQuery(me=me, word=word, langname=langname, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)
-    return bigQ
+    bigQ = ThickQuery(me=me, word=word, langname=langname, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)   # TODO: pass Lang into ThickQuery
+    return bigQ  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
 
 
 
@@ -301,6 +305,7 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     # for entry in entries.entrylist:
     else:
         entry = entries[0]
+    # def_id = int(def_id)
     # sec = entry.main_sec
 
 

@@ -133,7 +133,7 @@ class TestLlevar:
 
     def test_connection(self, monkeypatch):
 
-        Gs = main.mainloop(test_queries=[("llevaron", "Spanish"), ("llevar", "Spanish")])
+        Gs = main.mainloop(draw_graphs=False, test_queries=[("llevaron", "Spanish"), ("llevar", "Spanish")])
         # fetched_Q = fetch_query("llevaron", "Spanish")
         # GG = wx.graph(fetched_Q)
         assert len(Gs) == 3

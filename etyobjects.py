@@ -6,6 +6,7 @@ import networkx as nx
 
 import mwparserfromhell
 
+from pyetymology.helperobjs import query2
 from pyetymology.langcode import langcodes
 from pyetymology.module import moduleimpl
 
@@ -66,21 +67,8 @@ class Affixal:
 
 class WordRelation:
     def matches_query(self, me:str, word:str=None, lang:str=None, def_id:str=None) -> bool:
-        if me:
-            terms = me.split("#")
-            def_id = None
-            if len(terms) == 1:
-                word = me
-                warnings.warn("Language not detected for query " + me)
-                return self.word == word
-            elif len(terms) == 3:
-                warnings.warn("definition ids not supported yet")
-                word, lang, _ = terms
-            elif len(terms) == 2:
-                word, lang = terms
-            else:
-                raise ValueError(f"query {terms} has unexpected number of terms")
-        return moduleimpl.matches(self.word, self.langname, word, lang)  # TODO: NOT iterate through entire graph when trying to find a match
+        word, biglang, _ = query2.query_to_qparts(me)
+        return moduleimpl.matches(self.word, self.langname, word, biglang.langname)  # TODO: NOT iterate through entire graph when trying to find a match
 
 class EtyRelation(WordRelation):
     ety_abbrs = {"derived": "der",
@@ -219,8 +207,7 @@ class LemmaRelation(WordRelation):
             dashidx = str(template.name).index("-")
             lang = template.name[:dashidx]
 
-        print(f"Found lemma?: lang: {lang} word: {word}")
-
+        # print(f"Found lemma?: lang: {lang} word: {word}")
         self.params = params
         self.rtype = rtype
         self.lang = lang
