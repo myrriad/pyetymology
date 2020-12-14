@@ -13,5 +13,8 @@ def name(code, use_ety=False, use_fam=False) -> str:
             val = dict["canonicalName"]
     return val
 
-def is_deconstr(code) -> bool:
+def is_reconstr(code) -> bool:
     return code[-4:] == "-pro"
+
+def is_name_reconstr(langname) -> bool:
+    return langname.startswith("Proto-")

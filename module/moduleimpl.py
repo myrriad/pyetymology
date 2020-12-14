@@ -5,6 +5,8 @@ import warnings
 from typing import Tuple, Union
 
 from pyetymology.helperobjs.langhelper import Lang
+from pyetymology.langcode import langcodes
+
 
 def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None):
     if lang_or_none is None:
@@ -22,20 +24,21 @@ def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None):
 
 def urlword(word: str, lang: Union[str, Lang, None]) -> str:  # TODO: test this
 
-    if isinstance(lang, str):
-        return mimicked_link_keyword(word, lang)
-    if lang:
-        assert isinstance(lang, Lang)
-        if lang.reconstr:
-            urllang = urllib.parse.quote_plus(lang.langname.replace(" ", "-"))  # TODO: refine this
-            assert isinstance(lang.langname, str)
-            return "Reconstruction:" + urllang + "/" + urlword(word, lang.langname)
-        else:
-            return urlword(word, lang.langname)
-        raise TypeError(f"lang has unexpected type {type(lang)}!")
-    else:
+    if not lang:
         warnings.warn("retrieving urlword without a lang! language-deterministic checks such as macrons won't work!")
         return mimicked_link_keyword(word)
+    if isinstance(lang, str):
+        # lang is langname
+        return mimicked_link_keyword(word, lang)
+    assert isinstance(lang, Lang)
+    if lang.reconstr:
+        urllang = urllib.parse.quote_plus(lang.langname.replace(" ", "-"))  # TODO: refine this
+        assert isinstance(lang.langname, str)
+        return "Reconstruction:" + urllang + "/" + urlword(word, lang.langname)
+    else:
+        return urlword(word, lang.langname)
+    raise TypeError(f"lang has unexpected type {type(lang)}!")
+
 
 
 
@@ -54,10 +57,15 @@ anti_macron = [
     ("ū", "u"),
     ("Ȳ", "Y"),
     ("ȳ", "y")]
-def mimicked_link_keyword(word: str, lang: str=None) -> Tuple[str, str]:
-    if lang == "Latin":
+def mimicked_link_keyword(word: str, langname: str=None, is_deconstr=None) -> Tuple[str, str]:
+    if langname == "Latin":
         for a, b in anti_macron:
             word = word.replace(a, b)
+
+    if word.startswith("*"):
+        if is_deconstr or langcodes.is_name_reconstr(langname):
+            word = word[1:]
+
     urlword = urllib.parse.quote_plus(word)
 
     return urlword #design a function that mimics the behavior of https://en.wiktionary.org/wiki/Module:links

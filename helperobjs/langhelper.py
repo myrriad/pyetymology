@@ -13,7 +13,7 @@ class Lang:
         analyze_lname=False
         if langcode: # if we're given a langcode, we can generate everything else
             if not is_deconstr:
-                is_deconstr = langcodes.is_deconstr(langcode)
+                is_deconstr = langcodes.is_reconstr(langcode)
             if not langname:
                 langname = langcodes.name(langcode)
             self.langcode = langcode
@@ -42,7 +42,7 @@ class Lang:
                 warnings.warn("Neither langcode nor langname received; not enough information!")
                 self.reconstr = False
             else:
-                self.reconstr = self.langname.startswith("Proto-")
+                self.reconstr = langcodes.is_name_reconstr(self.langname)
                     # !!! If we're given only the langname, it is usual that it is not reconstructed
                 if self.reconstr:
                     warnings.warn(f"langcode was not given, yet langname is {langname} and starts with \"Proto-\", "
