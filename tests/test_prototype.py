@@ -23,7 +23,7 @@ def test_graph_eq():
 
     _Q = test_.fetch_query("prototype", "English")
     G = wikt_api.graph(_Q)
-    wikt_api.draw_graph(G, pause=True)
+    # wikt_api.draw_graph(G, pause=True)
     dl = nx.to_dict_of_lists(G)
     print(dl)
     assert repr(dl) == "{prototype#English$0: [], $0{der|French|prototype}: [prototype#English$0], $0{der|Late Latin|prototypon}: " \

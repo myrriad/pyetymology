@@ -10,6 +10,7 @@ class Lang:
         langname: Name of Language              ie. Spanish, Proto-Indo-European
         langqstr: Query string for language     ie. Spanish, R:Proto-Indo-European
         """
+        analyze_lname=False
         if langcode: # if we're given a langcode, we can generate everything else
             if not is_deconstr:
                 is_deconstr = langcodes.is_deconstr(langcode)
@@ -27,17 +28,25 @@ class Lang:
                 self.langname = langqstr[15:]
                 self.reconstr = True
             else:
-                self.langname = langqstr
-                self.reconstr = False
-
+                if not langname:
+                    langname = langqstr
+                    analyze_lname = True
         else:
+            analyze_lname = True
+        if analyze_lname:
             # if we're not given a langcode nor langqstr, but we may/may not have been given a langname
             # this is tricky
-            if not langname:
-                warnings.warn("Neither langcode nor langname received; not enough information!")
             self.langcode = None
             self.langname = langname
-            self.reconstr = False
+            if not langname:
+                warnings.warn("Neither langcode nor langname received; not enough information!")
+                self.reconstr = False
+            else:
+                self.reconstr = self.langname.startswith("Proto-")
+                    # !!! If we're given only the langname, it is usual that it is not reconstructed
+                if self.reconstr:
+                    warnings.warn(f"langcode was not given, yet langname is {langname} and starts with \"Proto-\", "
+                                  f"so it has been assumed to be a reconstructed language! Be aware that that assumption may be incorrect. ")
 
         self.langqstr = ("R:" + self.langname) if self.reconstr and self.langname else (self.langname)
 

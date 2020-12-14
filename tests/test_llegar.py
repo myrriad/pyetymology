@@ -91,7 +91,7 @@ class TestLlegar:
 
     def test_plico(self):
         G_plico = main.mainloop(draw_graphs=False, test_queries=[("llegaron", "Spanish"), ("llegar", "Spanish"), ("plico", "Latin")])[-1]
-        wikt_api.draw_graph(G_plico, pause=True)
+        # wikt_api.draw_graph(G_plico, pause=True)
         assert graph_to_str(G_plico) == "{llegaron#Spanish$0: [], $0L{es-verb form of|Spanish|llegar}: [llegaron#Spanish$0], $1{inh|Latin|plicāre}: [$0L{es-verb form of|Spanish|llegar}], $1{m|Latin|plicō ['I fold']}: [$1{inh|Latin|plicāre}], $1{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$1{m|Latin|plicō ['I fold']}], $2{der|Proto-Italic|*plekāō}: [$1{m|Latin|plicō ['I fold']}], $2{der|Proto-Indo-European|*pleḱ- ['', 'to plait, to weave']}: [$2{der|Proto-Italic|*plekāō}]}"
 
 
