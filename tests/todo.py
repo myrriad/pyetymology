@@ -106,3 +106,6 @@ to comply with the fundamental concept of showing dependence through nesting.
 # TODO: test auto_lang. For example test "llegar"
 
 # TODO: better lemma testing: for example ine-form's
+
+# TODO: transliteration, as according to https://en.wiktionary.org/wiki/Module:languages#Language:transliterate
+# TODO: language families, as according to https://en.wiktionary.org/wiki/Wiktionary:Languages#Language%20families

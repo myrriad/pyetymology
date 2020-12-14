@@ -277,6 +277,7 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     me, word, lang, def_id = _Query.query
     dom = _Query.dom
     query_origin = _Query.origin
+    biglang = _Query.biglang()
     existent_origin = existent_node if existent_node else query_origin # TODO: pass replacement_origin through origin constructor to wrap and create an origin _id
     prev = existent_origin # origin that is guaranteed already exists
     # TODO: existent node and the origin must be the same, or else they don't compose properly.
@@ -302,7 +303,7 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     # by a preexisting node that was already colored
     # therefore we should not colorize it
 
-    entries = lexer.lex2(dom)  #type: List[Entry]
+    entries = lexer.lex(dom)  #type: List[Entry]
     if def_id is None and len(entries) > 1:
         def_id = input("Multiple definitions detected. Enter an ID: ")
         if def_id == "":

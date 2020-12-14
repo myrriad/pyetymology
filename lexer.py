@@ -48,19 +48,20 @@ class Header:
 
 class Entry:
 
-    def __init__(self, ety: Header, extras: List[Header]):
-        assert ety or extras  # can't be blank
+    def __init__(self, ety: Header, extras: List[Header], desc: List[Header]):
+        assert ety or extras or desc # can't all be blank
         assert ety is None or isinstance(ety, Header)
         self.ety = ety  # type: Header
         self.extras = extras  # type: List[Header]
-
-def lex2(dom: List[Wikicode]) -> List[Entry]:
+        self.desc = desc
+def lex(dom: List[Wikicode]) -> List[Entry]:
     is_multi_ety = None
 
     ety = None  # type: Header
     nonetys = []  # type: List[Header]
     entries = []  # type: List[Entry]
     preety = []
+    desc = []  # type: List[Header]
     did_lemma = False
     for lvl3plus in wikt.sections_by_level(dom, 3):
 
@@ -85,14 +86,23 @@ def lex2(dom: List[Wikicode]) -> List[Entry]:
 
                 # package the previous
                 if ety or nonetys:
-                    entry = Entry(ety, nonetys)
+                    entry = Entry(ety, nonetys, desc)
                     entries.append(entry)
 
                 ety = Header(lvl3, lvl3plus[1:])
                 nonetys = []
-
+                desc = []
+        elif lvl3.startswith("Root"):
+            # Reconstructed langs
+            # TODO: Do the Descendants tab in for nonReconstructed langs
+            lvl4s = wikt.sections_by_level(lvl3plus[1:], 4)
+            for lvl4plus in lvl4s:
+                lvl4 = lvl4plus[0]
+                h = Header(lvl4, lvl4plus[1:], lvl=4)
+                desc.append(h)
+            pass
         else:
-            # Something other than an Etymology or a POS
+            # Something other than an Etymology: is it a POS?
 
             h = Header(lvl3, lvl3plus[1:])
             if poscodes.is_defn(lvl3):
@@ -115,8 +125,8 @@ def lex2(dom: List[Wikicode]) -> List[Entry]:
 
 
     # package remnants
-    if ety or nonetys:
-        entry = Entry(ety, nonetys)
+    if ety or nonetys or desc:
+        entry = Entry(ety, nonetys, desc)
         entries.append(entry)
     # o_entries = Entries(headers, is_multi_ety=is_multi_ety, did_ety=(is_multi_ety is not None), did_pos=did_lemma)
     return entries

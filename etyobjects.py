@@ -5,6 +5,7 @@ from typing import Tuple, Any
 import networkx as nx
 
 import mwparserfromhell
+from mwparserfromhell.nodes import Template
 
 from pyetymology.helperobjs import query2
 from pyetymology.langcode import langcodes
@@ -56,9 +57,9 @@ class Affixal:
         params = template.params
         self.template = template
         if rtype == "pre":
-            self.root = params[2]
+            self.root = str(template.get("3")) # params[2] lua has 1-indexed arrays
         elif rtype == "suf":
-            self.root = params[1]
+            self.root = str(template.get("2")) # params[1]
         # elif rtype == "con":
         else:
             self.root = ""
@@ -68,7 +69,15 @@ class Affixal:
 class WordRelation:
     def matches_query(self, me:str, strict=False, ultra_strict=False) -> bool:
         word, biglang, _ = query2.query_to_qparts(me)
-        return moduleimpl.matches(self.word, self.langname, word, biglang.langname, strict=strict, ultra_strict=ultra_strict)  # TODO: NOT iterate through entire graph when trying to find a match
+        return moduleimpl.matches(self.word, self.langname, word, biglang.langname, strict=strict, ultra_strict=ultra_strict)
+        # TODO: NOT iterate through entire graph when trying to find a match
+
+    @property
+    def o_id(self):
+        return self.origin.o_id
+
+    def __bool__(self):
+        return not self.null
 
 class EtyRelation(WordRelation):
     ety_abbrs = {"derived": "der",
@@ -118,23 +127,24 @@ class EtyRelation(WordRelation):
         if rtype in sim_abbrs:
             rtype = sim_abbrs[rtype]
 
-        # TODO: shift to using template.get("1") instead of template.params[0]
+        # DID: shift to using template.get("1") instead of template.params[0]
         self.null = False
         self.affixal = None
         if rtype in ety_abbrs.values():  # if it's an etymological relation
-            _selflang = str(params[0])
-            lang = str(params[1])
-            word = str(params[2])
+            _selflang = str(template.get("1"))  # str(params[0])
+            lang = str(template.get("2"))  # https://en.wiktionary.org/wiki/Template:derived
+            word = str(template.get("3"))
 
 
         elif rtype in cog_abbrs.values() or rtype in sim_abbrs.values():
             # if it's a cognate relation
-            # or affix, prefix, suffix, etc.
             # or mention
-            lang = str(params[0])
-            word = str(params[1])
-        elif rtype in aff_abbrs.values(): # this is really complicated
-            lang = str(params[0])
+            lang = str(template.get("1"))
+            word = str(template.get("2"))
+        elif rtype in aff_abbrs.values():
+            # if affix, prefix, suffix, etc.
+            # this is really complicated
+            lang = str(template.get("1"))
             # word = str(params[1])
             self.affixal = Affixal(template, rtype)
             word = self.affixal.root
@@ -166,13 +176,6 @@ class EtyRelation(WordRelation):
     def __repr__(self):
         return "$" + str(self.origin.o_id) + str(self)
 
-    def __bool__(self):
-        return not self.null
-
-    @property
-    def o_id(self):
-        return self.origin.o_id
-
 
 class LemmaRelation(WordRelation):
 
@@ -195,7 +198,8 @@ class LemmaRelation(WordRelation):
         if template.has("lang"):
             lang = str(template.get("lang"))
             word = str(template.get("1"))
-            # deprecated
+            # deprecated. It seems that this has been removed.
+            # TODO: Remove this, since it appears that this has bee deprecated AND removed.
         elif template.has("2"):
 
             lang = str(template.get("1"))
@@ -233,14 +237,57 @@ class LemmaRelation(WordRelation):
     def __repr__(self):
         return "$" + str(self.origin.o_id) + str(self)
 
-    def __bool__(self):
-        return not self.null
-
     # def __eq__(self, other): This must be made compatable with __hash__() to work w/ nx - not worth it
     #     return self.__repr__() == other.__repr__()
-    @property
-    def o_id(self):
-        return self.origin.o_id
+
+
+class DescendantRelation(WordRelation):
+    desc_abbrs = {"descendant": "desc"} # https://en.wiktionary.org/wiki/Template:descendant
+
+    def __init__(self, origin: Originator, template: mwparserfromhell.wikicode.Template):
+        self.origin = origin  # type: Originator  # TODO: create convenience super() init method
+
+        rtype = str(template.name)
+        params = template.params
+        lang = word = _selflang = None
+
+        abbrs = EtyRelation.desc_abbrs
+        if rtype in abbrs:  # use the abbreviations
+            rtype = abbrs[rtype]
+
+        self.null = False
+        self.affixal = None
+        _selflang = None
+        if rtype in abbrs.values():  # see https://en.wiktionary.org/wiki/Template:descendant: uses same layout as link and mention
+            lang = str(template.get("1"))
+            word = str(template.get("2"))
+        else:
+            self.null = True  # if it's none that are recognized, mark self as null
+
+        self.params = params
+        self.rtype = rtype
+        self.lang = lang
+        self.langname = langcodes.name(lang, use_ety=True, use_fam=True)
+        if lang and not self.langname:
+            print(f"{lang} is None")
+        self._selflang = _selflang
+        self._selflangname = langcodes.name(_selflang)
+        self.word = word
+
+    def __str__(self):
+        if not self:
+            return "#{{" + self.rtype + " null " + repr(self.params) + "}}"
+        if self.affixal:
+            return str(self.affixal.template)
+        assert self.word is not None
+        assert self.langname is not None
+        paramsc = repr(self.params[3:])  # slice off the first 3 args
+        paramsc = "" if paramsc == "[]" else " " + paramsc  # convert []s to ""
+
+        return "#{" + self.rtype + "|" + self.langname + "|" + self.word + paramsc + "}"
+
+    def __repr__(self):
+        return "$" + str(self.origin.o_id) + str(self)
 
 class MissingException(Exception):
 

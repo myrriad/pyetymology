@@ -23,7 +23,29 @@ def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None):
             raise TypeError(f"lang has unexpected type {type(lang)}")
 
 def urlword(word: str, lang: Union[str, Lang, None]) -> str:  # TODO: test this
+    """
+    Generates a urlword from what's used in the template.
+    See https://en.wiktionary.org/wiki/Template:mention under "|2= (optional)
+    See https://en.wiktionary.org/wiki/Module:languages#Language:makeEntryName
 
+    ``
+    if type(self._rawData.entry_name) == "table" then
+        text = do_entry_name_or_sort_key_replacements(text, self._rawData.entry_name)
+    end
+    ``
+    Except for Arabic,
+    The exact impl. of diacritic removal is impl.'d on the language level, NOT on the Module:language level.
+    See https://en.wiktionary.org/wiki/Wiktionary:Languages: "The data itself is not stored in Module:languages,
+     but instead is contained in a number of data modules (see Category:Language data modules). These are organised as follows:"
+    For example, Latin's macron removal is impl'd in it's specific section in
+    https://en.wiktionary.org/wiki/Module:languages/data2: (under Latin)
+    ``entry_name = {remove_diacritics = MACRON .. BREVE .. DIAER .. DOUBLEINVBREVE}``
+    https://en.wiktionary.org/wiki/Module:languages/data2
+    See https://en.wiktionary.org/wiki/Module:languages/data2 under "entry_name"
+    See function do_entry_name_or_sort_key_replacements()
+    """
+    # TODO: Unsupported titles
+    # TODO: do all of the entry_name fixes in https://en.wiktionary.org/wiki/Module:languages/data2, etc
     if not lang:
         warnings.warn("retrieving urlword without a lang! language-deterministic checks such as macrons won't work!")
         return mimicked_link_keyword(word)
@@ -104,6 +126,12 @@ def matches(word1, langname1, word2, langname2, strict=False, ultra_strict=False
             """
         else:
             return word1 == word2 or urlword(word1, langname1) == urlword(word2, langname2)
+            # if there's a lang-omitted term ("query") AND a lang-present term:
+            # the "query" will match BOTH the literal word-lang OR the reduced word-lang.
+            # for example plico will match plicō#Latin b/c plico matches the reduced word-lang.
+
+            # if they're both lang-omitted, then the reduced word-lang IS the literal word-lang
+            # so they will only match if the words are literally equal.
             """
             Equality is NOT well defined: NOT transitive!
             plicō#Latin == plico#Latin 
