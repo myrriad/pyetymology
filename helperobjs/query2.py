@@ -25,6 +25,12 @@ def node_to_qparts(node: Union[EtyRelation, LemmaRelation, None]) -> Tuple[str, 
 
 def query_to_qparts(query: str) -> Tuple[str, Lang, str]:
     assert query
+    do_derivs = False
+    if query.startswith("#"):
+        # user switch to enable derivations
+        # ie. #*dakaz would enable derivations of #*dakaz#Proto-Indo-European to be
+        do_derivs = True
+        query = query[1:]
     terms = query.split("#")
     def_id = None
     if len(terms) == 1:

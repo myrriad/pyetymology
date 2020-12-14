@@ -92,7 +92,7 @@ def lex(dom: List[Wikicode]) -> List[Entry]:
                 ety = Header(lvl3, lvl3plus[1:])
                 nonetys = []
                 desc = []
-        elif lvl3.startswith("Root"):
+        elif lvl3.startswith("===Root"):
             # Reconstructed langs
             # TODO: Do the Descendants tab in for nonReconstructed langs
             lvl4s = wikt.sections_by_level(lvl3plus[1:], 4)

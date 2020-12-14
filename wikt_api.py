@@ -22,7 +22,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import pyetymology.etyobjects
-from pyetymology import simple_sugi, lexer
+from pyetymology import simple_sugi, lexer, etyobjects
 import pyetymology.langcode as langcode
 
 ### START helper_api.py
@@ -31,7 +31,7 @@ from typing import List, Generator, Dict, Any, Tuple, Union
 import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology.etyobjects import EtyRelation, Originator, LemmaRelation, MissingException
+from pyetymology.etyobjects import EtyRelation, WordRelation, Originator, LemmaRelation, DescentRelation, MissingException
 from pyetymology.lexer import Header
 from pyetymology.module import moduleimpl
 
@@ -125,15 +125,15 @@ def is_in(elem, abbr_set: Dict[str, str]):
     return elem in abbr_set.keys() or elem in abbr_set.values()
 
 
-def find_node_by_origin(G: nx.Graph, origin: Originator) -> Union[EtyRelation, LemmaRelation, None]:
+def find_node_by_origin(G: nx.Graph, origin: Originator) -> Union[WordRelation, None]:
     """
     Returns the node that contains the originator; otherwise returns false
     """
 
     retn = []
     for node in G.nodes:
-        if isinstance(node, EtyRelation) or isinstance(node, LemmaRelation):
-            node: Union[EtyRelation, LemmaRelation]
+        if isinstance(node, WordRelation):
+            node: WordRelation
             if node.matches_query(origin.me):
                 retn.append(node)
     if len(retn) == 0:
@@ -144,12 +144,12 @@ def find_node_by_origin(G: nx.Graph, origin: Originator) -> Union[EtyRelation, L
     return retn[0]
 
 
-def find_node_by_query(GG: nx.DiGraph, query: str) -> Union[EtyRelation, LemmaRelation, None]:
+def find_node_by_query(GG: nx.DiGraph, query: str) -> Union[WordRelation, None]:
     # _ = [print(x) for x in GG.nodes]
     retn = []
     for node in GG.nodes:
-        if isinstance(node, EtyRelation) or isinstance(node, LemmaRelation):
-            node: Union[EtyRelation, LemmaRelation]
+        if isinstance(node, WordRelation):
+            node: WordRelation
             if node.matches_query(query):
                 retn.append(node)
         elif type(node) is Originator:
@@ -219,6 +219,7 @@ def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=T
 
 
 def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
+
     if not me:
         me = input("Enter a query: " + me)
 
@@ -273,7 +274,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     return bigQ  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
 
 
-def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False) -> nx.DiGraph:
+def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False, cog_lang_filter=None) -> nx.DiGraph:
     me, word, lang, def_id = _Query.query
     dom = _Query.dom
     query_origin = _Query.origin
@@ -283,11 +284,14 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     # TODO: existent node and the origin must be the same, or else they don't compose properly.
     # TODO: brainstorm workarounds. ie. OriginsTracker. TODO: finish implementing that
     new_origin = query_origin  #type: Originator # new_origin should have the updated o_id
+
+    if cog_lang_filter is None:
+        cog_lang_filter = None # None for ALL
     ety_flag = False
     lemma_flag = False
 
     def add_node(G, node, color=None):
-        assert type(node) in [EtyRelation, LemmaRelation, Originator]
+        assert isinstance(node, WordRelation) or isinstance(node, Originator)
         global colors
         color = colors[node.o_id] if color is None else color
         G.add_node(node, id=node.o_id, color=color)
@@ -315,10 +319,9 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     # def_id = int(def_id)
     # sec = entry.main_sec
 
-
     # if sec.startswith("===Etymology===") or sec.startswith(f"===Etymology {def_id}"):
     # if entry.entry_type == "Etymology":
-    ety = entry.ety #type: Header
+    ety: Header = entry.ety
     if ety:
         assert (len(entries) > 1) == (ety.idx is not None)
         # if multi_ety, then the idx should not be None
@@ -371,7 +374,7 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
                     # inh, der, bor, m
                     if any("+" in s for s in
                            between_text):  # or helper_api.is_in(token.rtype, helper_api.EtyRelation.aff_abbrs):
-                        prevs_parents = G.edges(nbunch=prev)  #
+                        prevs_parents = G.edges(nbunch=prev)
                         parnt = next(iter(prevs_parents), (None, None))[1]
                         # parnt = prev2
                         add_node(G, token)
@@ -391,6 +394,43 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
                 between_text = []
             else:
                 between_text.append(token)
+    desc: Header = entry.desc
+    if len(desc) != 1:
+        # most Derivation sections have only 1 root
+        warnings.warn(f"More than one descendant section for {_Query.me}!?")
+    for l3h in desc:
+        descRs = []
+        prevDR = None
+        for node in l3h.wikicode.ifilter(recursive=True):
+            if isinstance(node, mwp.wikicode.Template):
+                descR = DescentRelation(new_origin, node)
+                if descR:
+                    if descR.rtype == "see desc":
+                        # this is a marker that tells you that it might have stuff
+                        if cog_lang_filter and prevDR not in cog_lang_filter: # if there's a whitelist, but prevDR wasn't in the whitelist
+                            descRs.append(prevDR) # add it to compensate
+                    elif cog_lang_filter is None:
+                        descRs.append(descR) # cog_lang_filter allows all if None: aka a carte blanche
+                    elif descR.langname in cog_lang_filter:
+                        # otherwise, only if that langname is permissible according to the filter
+                        descRs.append(descR)
+                prevDR = descR
+            else:
+                pass
+                # prevDR = node
+
+        prev = existent_origin
+        for token in descRs:
+            add_node(G, token)
+            #if prev: # it should
+            G.add_edge(existent_origin, token) # TODO: indention based on the level of indent in wiktionary
+            if make_mentions_sideways and is_in(token.rtype, EtyRelation.sim_abbrs):
+                pass  # if a mention
+            else:
+                pass # prev = token
+
+
+
     #if sec.startswith("===Verb===") or sec.startswith(f"===Verb {def_id}"):
     # for subsec in sections_by_level(entry.subordinates, 4):
     for defn in entry.extras:  # type: Header
@@ -431,9 +471,9 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
 
 
 # def graph(query, wikiresponse, origin, src, word_urlify, replacement_origin=None):
-def graph(_Query: ThickQuery, replacement_origin=None) -> nx.DiGraph:
+def graph(_Query: ThickQuery, replacement_origin=None, cog_search_langs=None) -> nx.DiGraph:
     try:
-        G = parse_and_graph(_Query, existent_node=replacement_origin)
+        G = parse_and_graph(_Query, existent_node=replacement_origin, cog_lang_filter=cog_search_langs)
     except MissingException as e:
         if e.missing_thing == "definition":
             warnings.warn(str(e))

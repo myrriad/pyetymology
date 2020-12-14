@@ -13,7 +13,7 @@ from pyetymology.etyobjects import Originator
 from pyetymology.tests import test_
 
 
-def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> List[nx.DiGraph]:
+def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_search_langs=None) -> List[nx.DiGraph]:
     original_query = ""  # lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#Spanish"#"Reconstruction:Proto-Italic/feiljos#"
     # etyobjects.reset_global_o_id()  # TODO: avoid global state in Originator
     total_queries = 0
@@ -55,7 +55,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
         # so we take our query's origin and try to find
         # a node from our big, working tree GG.
 
-        G = ety.graph(_Q, replacement_origin=GG_origin)
+        G = ety.graph(_Q, replacement_origin=GG_origin, cog_search_langs=cog_search_langs)
         if test_queries:
             retn.append(G)
         if draw_graphs:
@@ -90,5 +90,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
 
 if __name__ == "__main__":
     print("main")
-    mainloop(None)
+    mainloop(cog_search_langs=["English", "Middle English", "Old English", "Proto-Germanic", "Proto-West Germanic",
+                               "French", "Middle French", "Old French", "Latin", "Old Latin", "Proto-Italic"])
+    # All ancestors of both ENglish and French langs, according to https://en.wiktionary.org/wiki/Category:English_language and https://en.wiktionary.org/wiki/Category:French_language
 

@@ -109,3 +109,7 @@ to comply with the fundamental concept of showing dependence through nesting.
 
 # TODO: transliteration, as according to https://en.wiktionary.org/wiki/Module:languages#Language:transliterate
 # TODO: language families, as according to https://en.wiktionary.org/wiki/Wiktionary:Languages#Language%20families
+
+#URGENT
+
+ # TODO: soft crashing for all of the asserts that I have

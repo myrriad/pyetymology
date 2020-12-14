@@ -29,6 +29,15 @@ def reset_global_o_id():
     global originator_id_incrementer
     originator_id_incrementer = 0
 
+def try_get(template: Template, key: str, default="", warn=True, throw=False) -> str:
+    if template.has(key):
+        return str(template.get(key))
+    else:
+        if throw:
+            raise ValueError(f"Template {template} doesn't have value defined at index {key}!")
+        warnings.warn(f"Template {template} doesn't have a word defined (at least at index {key})! This is very weird but apparently possible.")
+    return default
+
 class Originator:
 
 
@@ -133,22 +142,23 @@ class EtyRelation(WordRelation):
         if rtype in ety_abbrs.values():  # if it's an etymological relation
             _selflang = str(template.get("1"))  # str(params[0])
             lang = str(template.get("2"))  # https://en.wiktionary.org/wiki/Template:derived
-            word = str(template.get("3"))
-
+            word = try_get(template, "3")
 
         elif rtype in cog_abbrs.values() or rtype in sim_abbrs.values():
             # if it's a cognate relation
             # or mention
             lang = str(template.get("1"))
-            word = str(template.get("2"))
+
+            word = try_get(template, "2")
         elif rtype in aff_abbrs.values():
-            # if affix, prefix, suffix, etc.
+            # if affix, prefix, suffix, etc. https://en.wiktionary.org/wiki/Template:affix
             # this is really complicated
             lang = str(template.get("1"))
             # word = str(params[1])
             self.affixal = Affixal(template, rtype)
             word = self.affixal.root
         else:
+            warnings.warn("Template {rtype} is not recognized!")
             self.null = True  # if it's none that are recognized, mark self as null
 
         self.params = params
@@ -197,17 +207,21 @@ class LemmaRelation(WordRelation):
         print(template)
         if template.has("lang"):
             lang = str(template.get("lang"))
-            word = str(template.get("1"))
+            word = try_get(template, "1")
             # deprecated. It seems that this has been removed.
             # TODO: Remove this, since it appears that this has bee deprecated AND removed.
         elif template.has("2"):
 
             lang = str(template.get("1"))
-            word = str(template.get("2"))
+            word = try_get(template, "2")
         else:
             # es-verb form of
+            # (unnamed) or verb or inf or infinitive — should be the entry for the infinitive (el infinitivo).
             # TODO: add support for "verb", "inf", "infinitive"
-            word = str(template.get("1"))
+            # TODO: testing
+            word = try_get(template, "head")
+            word = word if word else try_get(template, "infinitive")
+            word = word if word else try_get(template, "1", throw=True)
             dashidx = str(template.name).index("-")
             lang = template.name[:dashidx]
 
@@ -241,8 +255,9 @@ class LemmaRelation(WordRelation):
     #     return self.__repr__() == other.__repr__()
 
 
-class DescendantRelation(WordRelation):
-    desc_abbrs = {"descendant": "desc"} # https://en.wiktionary.org/wiki/Template:descendant
+class DescentRelation(WordRelation):
+    desc_abbrs = {"descendant": "desc",
+                  "see descendants": "see desc"} # https://en.wiktionary.org/wiki/Template:descendant
 
     def __init__(self, origin: Originator, template: mwparserfromhell.wikicode.Template):
         self.origin = origin  # type: Originator  # TODO: create convenience super() init method
@@ -251,7 +266,7 @@ class DescendantRelation(WordRelation):
         params = template.params
         lang = word = _selflang = None
 
-        abbrs = EtyRelation.desc_abbrs
+        abbrs = DescentRelation.desc_abbrs
         if rtype in abbrs:  # use the abbreviations
             rtype = abbrs[rtype]
 
@@ -259,8 +274,10 @@ class DescendantRelation(WordRelation):
         self.affixal = None
         _selflang = None
         if rtype in abbrs.values():  # see https://en.wiktionary.org/wiki/Template:descendant: uses same layout as link and mention
-            lang = str(template.get("1"))
-            word = str(template.get("2"))
+            if rtype != "see desc": # exclude this, which just marks to see for further descendants
+                lang = str(template.get("1"))
+                word = try_get(template, "2")
+                # raise MissingException(f"Template {template} didn't have expected index {str(e)}", missing_thing="template_attribute")
         else:
             self.null = True  # if it's none that are recognized, mark self as null
 
