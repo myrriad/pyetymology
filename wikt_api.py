@@ -26,7 +26,7 @@ from pyetymology import simple_sugi, lexer
 import pyetymology.langcode as langcode
 
 ### START helper_api.py
-from typing import List, Generator, Dict, Any, Tuple
+from typing import List, Generator, Dict, Any, Tuple, Union
 
 import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
@@ -125,20 +125,44 @@ def is_in(elem, abbr_set: Dict[str, str]):
     return elem in abbr_set.keys() or elem in abbr_set.values()
 
 
-def contains_originator(G: nx.Graph, origin: Originator):
+def find_node_by_origin(G: nx.Graph, origin: Originator) -> Union[EtyRelation, LemmaRelation, None]:
     """
     Returns the node that contains the originator; otherwise returns false
     """
+
+    retn = []
     for node in G.nodes:
-        if isinstance(node, EtyRelation):
-            node: EtyRelation
+        if isinstance(node, EtyRelation) or isinstance(node, LemmaRelation):
+            node: Union[EtyRelation, LemmaRelation]
             if node.matches_query(origin.me):
-                return node
-        if isinstance(node, LemmaRelation):
-            node: LemmaRelation
-            if node.matches_query(origin.me):
-                return node
-    return None
+                retn.append(node)
+    if len(retn) == 0:
+        warnings.warn("No matching node found for origin!")
+        return None
+    if len(retn) > 1:
+        warnings.warn("Found more than 1 match for origin! picking the first one...")
+    return retn[0]
+
+
+def find_node_by_query(GG: nx.DiGraph, query: str) -> Union[EtyRelation, LemmaRelation, None]:
+    # _ = [print(x) for x in GG.nodes]
+    retn = []
+    for node in GG.nodes:
+        if isinstance(node, EtyRelation) or isinstance(node, LemmaRelation):
+            node: Union[EtyRelation, LemmaRelation]
+            if node.matches_query(query):
+                retn.append(node)
+        elif type(node) is Originator:
+            pass
+            # warnings.warn("Why is it matching the originator?")
+        else:
+            raise ValueError(f"node has unexpected type {type(node)}")
+    if len(retn) == 0:
+        warnings.warn("No matching node found for query!")
+        return None
+    if len(retn) > 1:
+        warnings.warn("Found more than 1 match for query! picking the first one...")
+    return retn[0]
 
 
 def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
@@ -200,7 +224,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
 
     found = False
     if working_G:
-        node = find_existent_query(working_G, me)
+        node = find_node_by_query(working_G, me)
         word, biglang, def_id = query2.node_to_qparts(node)
         found = word or biglang
     if not found:
@@ -247,24 +271,6 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     origin = Originator(me, o_id=query_id)
     bigQ = ThickQuery(me=me, word=word, langname=langname, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)   # TODO: pass Lang into ThickQuery
     return bigQ  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
-
-
-
-def find_existent_query(GG: nx.DiGraph, query: str):
-    # _ = [print(x) for x in GG.nodes]
-    for node in GG.nodes:
-        if type(node) is EtyRelation:
-            node: EtyRelation
-            if node.matches_query(query):
-                return node
-        elif type(node) is LemmaRelation:
-            node: LemmaRelation
-            if node.matches_query(query):
-                return node
-        elif type(node) is Originator:
-            warnings.warn("Why is it matching the originator?")
-        else:
-            raise ValueError(f"node has unexpected type {type(node)}")
 
 
 def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False) -> nx.DiGraph:

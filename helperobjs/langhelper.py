@@ -55,3 +55,9 @@ class Lang:
 
     def __eq__(self, other):
         return isinstance(other, Lang) and self.langcode == other.langcode and self.langname == other.langname and self.reconstr == other.reconstr
+
+    def __str__(self):
+        return self.langqstr if self else ""
+
+    def __repr__(self):
+        return self.langqstr if self else ""

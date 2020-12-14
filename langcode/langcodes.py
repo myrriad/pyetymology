@@ -17,4 +17,5 @@ def is_reconstr(code) -> bool:
     return code[-4:] == "-pro"
 
 def is_name_reconstr(langname) -> bool:
+
     return langname.startswith("Proto-")

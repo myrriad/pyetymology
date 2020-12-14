@@ -63,7 +63,7 @@ def mimicked_link_keyword(word: str, langname: str=None, is_deconstr=None) -> Tu
             word = word.replace(a, b)
 
     if word.startswith("*"):
-        if is_deconstr or langcodes.is_name_reconstr(langname):
+        if is_deconstr or langname and langcodes.is_name_reconstr(langname):
             word = word[1:]
 
     urlword = urllib.parse.quote_plus(word)
@@ -84,5 +84,44 @@ def emulated_link_keyword(key):
     pass # actually run the Module links.lua and use that to generate the link
 
 
-def matches(word1, langname1, word2, langname2):
-    return langname1 == langname2 and urlword(word1, langname1) == urlword(word2, langname2)
+def matches(word1, langname1, word2, langname2, strict=False, ultra_strict=False):
+    if langname1 and langname2: # if there are two defined languages
+        lang_check = (langname1 == langname2)
+        return lang_check and urlword(word1, langname1) == urlword(word2, langname2)
+    else:
+        # otherwise, one of them must be blank
+        # therefore, compensation for macrons and sht is messed up
+        if ultra_strict:
+            return False
+        # if we are be lenient
+        if strict:
+            return urlword(word1, langname1) == urlword(word2, langname2)
+            """
+            Equality is well defined: transitive, etc. everything you'd expect from equality
+            plicō#Latin == plico#Latin == plico =/= plicō
+            plicō#Latin, plico#Latin =/= plicō
+            plicō =/= plico
+            """
+        else:
+            return word1 == word2 or urlword(word1, langname1) == urlword(word2, langname2)
+            """
+            Equality is NOT well defined: NOT transitive!
+            plicō#Latin == plico#Latin 
+            plicō#Latin == plicō 
+            !! plico#Latin =/= plicō 
+            !! plicō#Latin == plico
+            plico#Latin == plico
+            plicō =/= plico
+            
+            """
+            return
+    """
+    # TODO:
+    plicō#Latin == plico#Latin 
+    plicō#Latin ?== plicō 
+    plico#Latin ?== plicō 
+    plicō#Latin ?== plico
+    plico#Latin ?== plico
+    plicō ?=/= plico
+    
+    """

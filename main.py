@@ -19,7 +19,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
     total_queries = 0
     _EXIT = object()
     retn = []
-    def test_safe_query(original_query):
+    def test_safe_query(original_query, working_G=None):
         nonlocal total_queries
         nonlocal test_queries
         nonlocal _EXIT
@@ -28,7 +28,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
                 return _EXIT
             _q1 = test_.fetch_query(*test_queries[total_queries], query_id=total_queries)
         else:
-            _q1 = ety.query(original_query, query_id=total_queries)
+            _q1 = ety.query(original_query, query_id=total_queries, working_G=working_G)
         total_queries += 1
         return _q1
 
@@ -41,14 +41,14 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
     GG = None
     while True:
         assert True
-        _Q = test_safe_query("") # ask for another query from the user
+        _Q = test_safe_query("", working_G=GG) # ask for another query from the user
         if _Q is _EXIT:  # exit condition
             retn.append(GG)
             return retn
 
         query_origin = _Q.origin
         if GG:
-            GG_origin = ety.contains_originator(GG, query_origin)
+            GG_origin = ety.find_node_by_origin(GG, query_origin)
         else:
             GG_origin = None
         # We want to connect these two graphs,
@@ -77,7 +77,6 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True) -> Lis
 
 
         """
-        # connect G to GG
         common_link = ety.contains_originator(GG, origin)
         GG2 = nx.compose(GG, G)
         if common_link:

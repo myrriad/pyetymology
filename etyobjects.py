@@ -66,9 +66,9 @@ class Affixal:
 
 
 class WordRelation:
-    def matches_query(self, me:str, word:str=None, lang:str=None, def_id:str=None) -> bool:
+    def matches_query(self, me:str, strict=False, ultra_strict=False) -> bool:
         word, biglang, _ = query2.query_to_qparts(me)
-        return moduleimpl.matches(self.word, self.langname, word, biglang.langname)  # TODO: NOT iterate through entire graph when trying to find a match
+        return moduleimpl.matches(self.word, self.langname, word, biglang.langname, strict=strict, ultra_strict=ultra_strict)  # TODO: NOT iterate through entire graph when trying to find a match
 
 class EtyRelation(WordRelation):
     ety_abbrs = {"derived": "der",
