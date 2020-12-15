@@ -12,7 +12,7 @@ from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology.helperobjs import query2
 from pyetymology.helperobjs.langhelper import Lang
-from pyetymology.helperobjs.querying import ThickQuery
+from pyetymology.helperobjs.querying import ThickQuery, DummyQuery
 from pyetymology.langcode.cache import Cache
 import grandalf.utils as grutils
 import networkx as nx
@@ -218,23 +218,30 @@ def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=T
     return lang_secs, lang
 
 
-def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> ThickQuery:
+def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> Union[ThickQuery, List[str]]:
 
     if not me:
         me = input("Enter a query: " + me)
 
     found = False
+    qflags = None
     if working_G:
         node = find_node_by_query(working_G, me)
-        word, biglang, def_id = query2.node_to_qparts(node)
+        word, biglang, qflags = query2.node_to_qparts(node)
+        assert qflags is None
         found = word or biglang
-    if not found:
-        word, biglang, def_id = query2.query_to_qparts(me)
+    if found:
+        _, _, qflags = query2.query_to_qparts(me)
+        def_id = qflags.def_id # None
+    else:
+        word, biglang, qflags = query2.query_to_qparts(me)
+        def_id = qflags.def_id
     if biglang is None:
         biglang = Lang()
+
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src = moduleimpl.to_link(word, biglang) # we take the word and lang and parse it into the corresponding wikilink
+    src = moduleimpl.to_link(word, biglang, qflags) # we take the word and lang and parse it into the corresponding wikilink
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
@@ -248,6 +255,22 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
 
     txt = res.text
     jsn = json.loads(txt) #type: json
+    derivs = []
+    if qflags.deriv:
+        if "query" in jsn:
+            derivs = [pair["title"] for pair in jsn["query"]["categorymembers"]]
+            origin = Originator(me, o_id=query_id)
+            return DummyQuery(me=me,origin=origin,child_queries=derivs,with_lang=Lang(langcode="en"))
+        elif "error" in jsn:
+            print(src)
+            print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang)}")
+            raise MissingException(
+                "Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]),
+                missing_thing="Everything")
+
+    # https://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:English_terms_derived_from_the_Proto-Indo-European_root_*ple%E1%B8%B1-&cmprop=title
+
+
     if "parse" in jsn:
         wikitext = jsn["parse"]["wikitext"]
     elif "error" in jsn:
@@ -291,7 +314,7 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     lemma_flag = False
 
     def add_node(G, node, color=None):
-        assert isinstance(node, WordRelation) or isinstance(node, Originator)
+        assert isinstance(node, WordRelation) or isinstance(node, Originator) # TODO: what if prev is already in graph?
         global colors
         color = colors[node.o_id] if color is None else color
         G.add_node(node, id=node.o_id, color=color)
@@ -306,6 +329,16 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
     # if replacement_origin is not the origin, then that means that the origin was replaced
     # by a preexisting node that was already colored
     # therefore we should not colorize it
+
+    if type(_Query) == DummyQuery:
+        _Query: DummyQuery
+        childs = _Query.child_queries
+        for child in childs:
+            dr = DescentRelation(origin=_Query.origin,template=None,query_opt=child + "#English")
+            add_node(G, dr)
+            G.add_edge(existent_origin, dr)
+        return G
+
 
     entries = lexer.lex(dom)  #type: List[Entry]
     if def_id is None and len(entries) > 1:
@@ -395,7 +428,7 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
             else:
                 between_text.append(token)
     desc: Header = entry.desc
-    if len(desc) != 1:
+    if len(desc) > 1:
         # most Derivation sections have only 1 root
         warnings.warn(f"More than one descendant section for {_Query.me}!?")
     for l3h in desc:

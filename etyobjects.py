@@ -1,6 +1,6 @@
 import string
 import warnings
-from typing import Tuple, Any
+from typing import Any
 
 import networkx as nx
 
@@ -259,8 +259,21 @@ class DescentRelation(WordRelation):
     desc_abbrs = {"descendant": "desc",
                   "see descendants": "see desc"} # https://en.wiktionary.org/wiki/Template:descendant
 
-    def __init__(self, origin: Originator, template: mwparserfromhell.wikicode.Template):
+    def __init__(self, origin: Originator, template: mwparserfromhell.wikicode.Template, query_opt:str=None):
+
+
+
         self.origin = origin  # type: Originator  # TODO: create convenience super() init method
+
+        if query_opt:
+            word, _Lang, qflags = query2.query_to_qparts(query_opt)
+            self.word = word
+            self.langname = _Lang.langname
+            self.rtype = "custom"
+            self.params = []
+            self.null = False
+            self.affixal = None
+            return
 
         rtype = str(template.name)
         params = template.params
@@ -312,3 +325,5 @@ class MissingException(Exception):
         super().__init__(self, message)
         self.G = G
         self.missing_thing = missing_thing
+
+

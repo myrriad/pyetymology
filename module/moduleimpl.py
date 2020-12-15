@@ -7,22 +7,35 @@ from typing import Tuple, Union
 from pyetymology.helperobjs.langhelper import Lang
 from pyetymology.langcode import langcodes
 
+def urllang(lang: str):
+    return urllib.parse.quote_plus(lang.langname.replace(" ", "-"))
 
-def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None):
+
+class QueryFlags:
+    def __init__(self, def_id, deriv=False):
+        self.def_id = def_id
+        self.deriv = deriv
+
+
+def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None, qflags:QueryFlags=None, target_lang:str="English", target_results:int=50):
     if lang_or_none is None:
         _urlword = word_or_urlword
         return "https://en.wiktionary.com/w/api.php?action=parse&page=" + _urlword + "&prop=wikitext&formatversion=2&format=json"
     else:
         word = word_or_urlword
         lang = lang_or_none
-        if isinstance(lang, str):
-            return to_link(urlword(word=word, lang=lang))
-        elif isinstance(lang, Lang):
+        if qflags and qflags.deriv:
+            # apparently you have to use an entirely different API (https://stackoverflow.com/questions/19285346/how-to-download-a-category-of-words-from-wiktionary)
+            return f"https://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=" \
+                   f"Category:{target_lang}_terms_derived_from_the_{urllang(lang)}_root_{urlword(word, lang.langname, strip_reconstr_star=False)}&cmprop=title" \
+                   f"&format=json&cmlimit={target_results}"
+            #  to_link(urlword(word=word, lang=lang))
+        elif isinstance(lang, str) or isinstance(lang, Lang):
             return to_link(urlword(word=word, lang=lang))
         else:
             raise TypeError(f"lang has unexpected type {type(lang)}")
 
-def urlword(word: str, lang: Union[str, Lang, None]) -> str:  # TODO: test this
+def urlword(word: str, lang: Union[str, Lang, None], strip_reconstr_star=True) -> str:  # TODO: test this
     """
     Generates a urlword from what's used in the template.
     See https://en.wiktionary.org/wiki/Template:mention under "|2= (optional)
@@ -48,15 +61,15 @@ def urlword(word: str, lang: Union[str, Lang, None]) -> str:  # TODO: test this
     # TODO: do all of the entry_name fixes in https://en.wiktionary.org/wiki/Module:languages/data2, etc
     if not lang:
         warnings.warn("retrieving urlword without a lang! language-deterministic checks such as macrons won't work!")
-        return mimicked_link_keyword(word)
+        return mimicked_link_keyword(word, strip_reconstr_star=strip_reconstr_star)
     if isinstance(lang, str):
         # lang is langname
-        return mimicked_link_keyword(word, lang)
+        return mimicked_link_keyword(word, lang, strip_reconstr_star=strip_reconstr_star)
     assert isinstance(lang, Lang)
     if lang.reconstr:
-        urllang = urllib.parse.quote_plus(lang.langname.replace(" ", "-"))  # TODO: refine this
+        _urllang = urllang(lang)  # TODO: refine this
         assert isinstance(lang.langname, str)
-        return "Reconstruction:" + urllang + "/" + urlword(word, lang.langname)
+        return "Reconstruction:" + _urllang + "/" + urlword(word, lang.langname)
     else:
         return urlword(word, lang.langname)
     raise TypeError(f"lang has unexpected type {type(lang)}!")
@@ -79,12 +92,12 @@ anti_macron = [
     ("ū", "u"),
     ("Ȳ", "Y"),
     ("ȳ", "y")]
-def mimicked_link_keyword(word: str, langname: str=None, is_deconstr=None) -> Tuple[str, str]:
+def mimicked_link_keyword(word: str, langname: str=None, is_deconstr=None, strip_reconstr_star=True) -> Tuple[str, str]:
     if langname == "Latin":
         for a, b in anti_macron:
             word = word.replace(a, b)
 
-    if word.startswith("*"):
+    if word.startswith("*") and strip_reconstr_star:
         if is_deconstr or langname and langcodes.is_name_reconstr(langname):
             word = word[1:]
 

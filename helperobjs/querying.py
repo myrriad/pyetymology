@@ -3,6 +3,8 @@ from typing import List, Tuple
 from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology.etyobjects import Originator
+from pyetymology.helperobjs.langhelper import Lang
+from pyetymology.module.moduleimpl import QueryFlags
 from pyetymology.helperobjs import query2
 from pyetymology.module import moduleimpl
 
@@ -12,13 +14,17 @@ class ThickQuery():
     def __init__(self,
                  me: str, word: str, langname: str, def_id: str,
                  res: Wikicode, wikitext: str, dom: List[Wikicode],
-                 origin: Originator):
+                 origin: Originator, qflags: QueryFlags = None):
         self.me = me
         # self.word = word
         # self.lang = langname
-        self.def_id = def_id
 
-        _word, _Lang, _def_id = query2.query_to_qparts(me)
+        _word, _Lang, _qflags = query2.query_to_qparts(me)
+        # _def_id = _qflags.def_id
+        self.queryflags = _qflags
+        assert def_id == _qflags.def_id
+        self.def_id = _qflags.def_id
+
         self.word = _word
         self.lang = _Lang.langname
         assert word == self.word
@@ -49,6 +55,17 @@ class ThickQuery():
     def wikitext_link(self):
         return moduleimpl.to_link(self.word, self.biglang())
 
+
+class DummyQuery(ThickQuery):
+    def __init__(self, me:str, origin:Originator, child_queries: List[str], with_lang:Lang):
+        word, _Lang, _qflags = query2.query_to_qparts(me)
+        biglang = with_lang
+
+        me2 = word + "#" + biglang.langqstr
+        lang = biglang.langname
+        def_id = _qflags.def_id
+        super().__init__(me=me2, word=word, langname=lang, def_id=def_id, res=None, wikitext=None, dom=None, origin=origin, qflags=_qflags)
+        self.child_queries = child_queries
 
 def from_tupled(query: Tuple[str, str, str, str], wikiresponse: Tuple[Wikicode, str, List[Wikicode]], origin: Originator):
     return ThickQuery(*query, *wikiresponse, origin)
