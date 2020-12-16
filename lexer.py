@@ -2,7 +2,7 @@ from typing import List, Union
 
 from mwparserfromhell.wikicode import Wikicode
 
-import pyetymology.wikt_api as wikt
+from pyetymology import wikt_api as wikt
 from pyetymology.langcode import poscodes
 
 

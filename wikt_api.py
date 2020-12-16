@@ -1,11 +1,8 @@
 import builtins
 import json
-import pickle
 import string
-import urllib
 import warnings
 
-import grandalf
 import mwparserfromhell as mwp
 import requests
 from mwparserfromhell.wikicode import Wikicode
@@ -17,13 +14,10 @@ from pyetymology.langcode.cache import Cache
 import grandalf.utils as grutils
 import networkx as nx
 
-import matplotlib
 # matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
 
-import pyetymology.etyobjects
-from pyetymology import simple_sugi, lexer, etyobjects
-import pyetymology.langcode as langcode
+from pyetymology import simple_sugi, lexer
 
 ### START helper_api.py
 from typing import List, Generator, Dict, Any, Tuple, Union
