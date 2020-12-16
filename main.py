@@ -90,6 +90,9 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_se
         """
 
 
+def graph_to_str(G: nx.DiGraph):
+    dl = nx.to_dict_of_lists(G)
+    return repr(dl)
 
 
 if __name__ == "__main__":
