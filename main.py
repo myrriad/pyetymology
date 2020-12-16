@@ -28,9 +28,14 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_se
                 return _EXIT
             _q1 = test_.fetch_query(*test_queries[total_queries], query_id=total_queries)
         elif run_queries:
-            if total_queries >= len(test_queries):
+            if total_queries >= len(run_queries):
                 return _EXIT
-            _q1 = ety.query(run_queries[total_queries], query_id=total_queries)
+            potential = run_queries[total_queries]
+            if potential:
+                _q1 = ety.query(me=run_queries[total_queries], query_id=total_queries, working_G=working_G)
+            else:
+                print("Prematurely exiting!")
+                return _EXIT
         else:
             _q1 = ety.query(original_query, query_id=total_queries, working_G=working_G)
         total_queries += 1
