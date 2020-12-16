@@ -32,7 +32,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_se
                 return _EXIT
             potential = run_queries[total_queries]
             if potential:
-                _q1 = ety.query(me=run_queries[total_queries], query_id=total_queries, working_G=working_G)
+                _q1 = ety.query(me=potential, query_id=total_queries, working_G=working_G)
             else:
                 print("Prematurely exiting!")
                 return _EXIT
