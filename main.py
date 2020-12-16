@@ -22,6 +22,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_se
     def test_safe_query(original_query, working_G=None):
         nonlocal total_queries
         nonlocal test_queries
+        nonlocal run_queries
         nonlocal _EXIT
         if test_queries:
             if total_queries >= len(test_queries):
@@ -33,7 +34,6 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_se
             potential = run_queries[total_queries]
             if potential:
                 print(f"querying:{potential}")
-
                 _q1 = ety.query(me=potential, query_id=total_queries, working_G=working_G)
             else:
                 print("Prematurely exiting!")
