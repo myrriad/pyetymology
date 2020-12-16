@@ -13,7 +13,7 @@ from pyetymology.etyobjects import Originator
 from pyetymology.tests import test_
 
 
-def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_search_langs=None) -> List[nx.DiGraph]:
+def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_search_langs=None, run_queries:List[str]=None) -> List[nx.DiGraph]:
     original_query = ""  # lleno#Spanish"#llenar#Spanish"#"conflate#English"#"llegar#Spanish"#"Reconstruction:Proto-Italic/feiljos#"
     # etyobjects.reset_global_o_id()  # TODO: avoid global state in Originator
     total_queries = 0
@@ -27,6 +27,10 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_se
             if total_queries >= len(test_queries):
                 return _EXIT
             _q1 = test_.fetch_query(*test_queries[total_queries], query_id=total_queries)
+        elif run_queries:
+            if total_queries >= len(test_queries):
+                return _EXIT
+            _q1 = ety.query(run_queries[total_queries], query_id=total_queries)
         else:
             _q1 = ety.query(original_query, query_id=total_queries, working_G=working_G)
         total_queries += 1

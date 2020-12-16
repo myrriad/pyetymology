@@ -20,13 +20,13 @@ class QueryFlags:
 def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None, qflags:QueryFlags=None, target_lang:str="English", target_results:int=50):
     if lang_or_none is None:
         _urlword = word_or_urlword
-        return "https://en.wiktionary.com/w/api.php?action=parse&page=" + _urlword + "&prop=wikitext&formatversion=2&format=json"
+        return "http://en.wiktionary.org/w/api.php?action=parse&page=" + _urlword + "&prop=wikitext&formatversion=2&format=json"
     else:
         word = word_or_urlword
         lang = lang_or_none
         if qflags and qflags.deriv:
             # apparently you have to use an entirely different API (https://stackoverflow.com/questions/19285346/how-to-download-a-category-of-words-from-wiktionary)
-            return f"https://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=" \
+            return f"http://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=" \
                    f"Category:{target_lang}_terms_derived_from_the_{urllang(lang)}_root_{urlword(word, lang.langname, strip_reconstr_star=False)}&cmprop=title" \
                    f"&format=json&cmlimit={target_results}"
             #  to_link(urlword(word=word, lang=lang))
@@ -147,22 +147,22 @@ def matches(word1, langname1, word2, langname2, strict=False, ultra_strict=False
             # so they will only match if the words are literally equal.
             """
             Equality is NOT well defined: NOT transitive!
-            plicō#Latin == plico#Latin 
-            plicō#Latin == plicō 
-            !! plico#Latin =/= plicō 
+            plicō#Latin == plico#Latin
+            plicō#Latin == plicō
+            !! plico#Latin =/= plicō
             !! plicō#Latin == plico
             plico#Latin == plico
             plicō =/= plico
-            
+
             """
             return
     """
     # TODO:
-    plicō#Latin == plico#Latin 
-    plicō#Latin ?== plicō 
-    plico#Latin ?== plicō 
+    plicō#Latin == plico#Latin
+    plicō#Latin ?== plicō
+    plico#Latin ?== plicō
     plicō#Latin ?== plico
     plico#Latin ?== plico
     plicō ?=/= plico
-    
+
     """

@@ -240,12 +240,12 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         biglang = Lang()
 
     # word_urlify = urllib.parse.quote_plus(word)
-    # src = "https://en.wiktionary.com/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
+    # src = "https://en.wiktionary.org/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
     src = moduleimpl.to_link(word, biglang, qflags) # we take the word and lang and parse it into the corresponding wikilink
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
-    # https://en.wiktionary.com/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
+    # https://en.wiktionary.org/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
     if online:
         global session
         res = session.get(src)
@@ -254,6 +254,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         raise Exception("offline browsing not implemented yet")
 
     txt = res.text
+    print(txt)
     jsn = json.loads(txt) #type: json
     derivs = []
     if qflags.deriv:
