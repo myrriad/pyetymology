@@ -101,6 +101,21 @@ def graph_to_str(G: nx.DiGraph):
     dl = nx.to_dict_of_lists(G)
     return repr(dl)
 
+def graph_to_gexf(G: nx.DiGraph):
+    return nx.generate_gexf(G)
+
+def graph_to_cyto(G: nx.DiGraph) -> dict:
+    """Returns data in Cytoscape JSON format (cyjs), according to nx.cytoscape_data(G)
+    Returns
+    -------
+    data: dict
+        A dictionary with cyjs formatted data.
+    Raises
+    ------
+    NetworkXError
+        If values in attrs are not unique.
+    """
+    return nx.cytoscape_data(G)
 
 if __name__ == "__main__":
     print("main")
