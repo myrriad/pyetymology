@@ -1,3 +1,4 @@
+import json
 import string
 import warnings
 from typing import Any
@@ -35,7 +36,8 @@ def try_get(template: Template, key: str, default="", warn=True, throw=False) ->
     else:
         if throw:
             raise ValueError(f"Template {template} doesn't have value defined at index {key}!")
-        warnings.warn(f"Template {template} doesn't have a word defined (at least at index {key})! This is very weird but apparently possible.")
+        if warn:
+            warnings.warn(f"Template {template} doesn't have a word defined at index {key}! This is strange but apparently possible.")
     return default
 
 class Originator:
@@ -59,7 +61,6 @@ class Originator:
 
     def __repr__(self):
         return str(self.me) + "$" + str(self.o_id)
-
 
 class Affixal:
     def __init__(self, template: mwparserfromhell.wikicode.Template, rtype: string):
@@ -220,7 +221,7 @@ class LemmaRelation(WordRelation):
             # TODO: add support for "verb", "inf", "infinitive"
             # TODO: testing
             word = try_get(template, "head")
-            word = word if word else try_get(template, "infinitive")
+            word = word if word else try_get(template, "infinitive", warn=False)
             word = word if word else try_get(template, "1", throw=True)
             dashidx = str(template.name).index("-")
             lang = template.name[:dashidx]
@@ -326,4 +327,12 @@ class MissingException(Exception):
         self.G = G
         self.missing_thing = missing_thing
 
+class MissingInputException(MissingException):
+    def __init__(self, *args, **kwargs):
+        super(MissingException, self).__init__(*args, **kwargs)
+
+class InputException(Exception):
+    """
+    When more user info/input is needed, and console input is disabled.
+    """
 

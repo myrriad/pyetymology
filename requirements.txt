@@ -1,0 +1,12 @@
+grandalf==0.7
+mwparserfromhell==0.5.4
+
+requests==2.25.1 # 2.24.0
+
+networkx==2.5
+matplotlib==3.3.2 #
+
+
+dill==0.3.3
+
+pytest==6.1.2

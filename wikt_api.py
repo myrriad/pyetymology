@@ -25,7 +25,8 @@ from typing import List, Generator, Dict, Any, Tuple, Union
 import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology.etyobjects import EtyRelation, WordRelation, Originator, LemmaRelation, DescentRelation, MissingException
+from pyetymology.etyobjects import EtyRelation, WordRelation, Originator, LemmaRelation, DescentRelation, \
+    MissingException, InputException, MissingInputException
 from pyetymology.lexer import Header
 from pyetymology.module import moduleimpl
 
@@ -35,7 +36,10 @@ def input(__prompt: Any) -> str:
     if _is_plot_active:
         print("Close MatplotLib to Continue")
         plt.show()
-    return builtins.input(__prompt)
+    try:
+        return builtins.input(__prompt)
+    except EOFError as e_info:
+        raise InputException("Unable to read from console.") from None
 
 online = True # TODO: online=False displays wrong versions of ety trees without throwing an exception
 
@@ -165,13 +169,10 @@ def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikic
     dom = res.get_sections(flat=not redundance)
     return res, dom
 
-
-"""
-Returns sections of only 1 lang
-"""
-
-
-def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=True) -> Tuple[List[Wikicode], str, str, str]:
+def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=True, use_input=True) -> Tuple[List[Wikicode], str, str, str]:
+    """
+    Returns sections of only 1 lang
+    """
     lang = ""
     # try to extract lang from dom
     found_langs = all_lang_sections(dom, flat=True)
@@ -191,8 +192,10 @@ def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=T
         if not lang:
             if use_lang:
                 usrin = use_lang
-            else:
+            elif use_input:  # if it's possible to read input from the console
                 usrin = input("Choose a lang from these options: " + str(lang_options))
+            else:  # if such is not possible
+                raise MissingException(f"Could not auto-infer language from the languages {str(lang_options)}.", missing_thing="language_specification")
             if usrin in lang_options:
                 lang = usrin
             elif permit_abbrevs:
@@ -508,9 +511,9 @@ def graph(_Query: ThickQuery, replacement_origin=None, cog_search_langs=None) ->
             G = e.G
             # DID: soft crash
         else:
-            raise e
+            raise e from None
     except Exception as e:
-        raise e
+        raise e from None
     finally:
         print(_Query.wikitext_link)
         print(f"https://en.wiktionary.org/wiki/{_Query.word_urlify}")
@@ -545,8 +548,12 @@ def draw_graph(G, simple=False, pause=False):
         nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
     else:
         global colors
-        node_colors = {node: colors[node.o_id] for node in G.nodes}
-        nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
+        try:
+            node_colors = {node: colors[node.o_id] for node in G.nodes}
+            nx.draw(G, pos=poses, with_labels=True, node_color=node_colors.values())
+        except AttributeError:
+            warnings.warn("Node didn't have color?")
+            nx.draw(G, pos=poses, with_labels=True)
 
     # x.draw_networkx_edges(G, pos=poses)
 
