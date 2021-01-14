@@ -35,7 +35,7 @@ def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None, qf
         else:
             raise TypeError(f"lang has unexpected type {type(lang)}")
 
-def urlword(word: str, lang: Union[str, Lang, None], strip_reconstr_star=True) -> str:  # TODO: test this
+def urlword(word: str, lang: Union[str, Lang, None], strip_reconstr_star=True, warn=True) -> str:  # TODO: test this
     """
     Generates a urlword from what's used in the template.
     See https://en.wiktionary.org/wiki/Template:mention under "|2= (optional)
@@ -60,22 +60,19 @@ def urlword(word: str, lang: Union[str, Lang, None], strip_reconstr_star=True) -
     # TODO: Unsupported titles
     # TODO: do all of the entry_name fixes in https://en.wiktionary.org/wiki/Module:languages/data2, etc
     if not lang:
-        warnings.warn("retrieving urlword without a lang! language-deterministic checks such as macrons won't work!")
-        return mimicked_link_keyword(word, strip_reconstr_star=strip_reconstr_star)
+        if warn:
+            warnings.warn("retrieving urlword without a lang! no macrons etc.")
+        return url(keyword(word, strip_reconstr_star=strip_reconstr_star))
     if isinstance(lang, str):
         # lang is langname
-        return mimicked_link_keyword(word, lang, strip_reconstr_star=strip_reconstr_star)
+        return url(keyword(word, lang, strip_reconstr_star=strip_reconstr_star))
     assert isinstance(lang, Lang)
     if lang.reconstr:
         _urllang = urllang(lang)  # TODO: refine this
         assert isinstance(lang.langname, str)
-        return "Reconstruction:" + _urllang + "/" + urlword(word, lang.langname)
+        return "Reconstruction:" + _urllang + "/" + url(keyword(word, lang.langname))
     else:
         return urlword(word, lang.langname)
-    raise TypeError(f"lang has unexpected type {type(lang)}!")
-
-
-
 
 # Below are implementations of urlword(word, lang: str)
 
@@ -92,7 +89,18 @@ anti_macron = [
     ("ū", "u"),
     ("Ȳ", "Y"),
     ("ȳ", "y")]
-def mimicked_link_keyword(word: str, langname: str=None, is_deconstr=None, strip_reconstr_star=True) -> Tuple[str, str]:
+
+def url(word):
+    return urllib.parse.quote_plus(word)
+
+
+def keyword(word: str, langname: str=None, is_deconstr=None, strip_reconstr_star=True):
+    return mimicked_keyword(word, langname, is_deconstr=is_deconstr, strip_reconstr_star=strip_reconstr_star)
+
+def mimicked_keyword(word: str, langname: str=None, is_deconstr=None, strip_reconstr_star=True) -> Tuple[str, str]:
+    """
+    Formerly mimicked_link_keyword
+    """
     if langname == "Latin":
         for a, b in anti_macron:
             word = word.replace(a, b)
@@ -101,11 +109,12 @@ def mimicked_link_keyword(word: str, langname: str=None, is_deconstr=None, strip
         if is_deconstr or langname and langcodes.is_name_reconstr(langname):
             word = word[1:]
 
-    urlword = urllib.parse.quote_plus(word)
+    return word
+    # urlword = urllib.parse.quote_plus(word)
 
-    return urlword #design a function that mimics the behavior of https://en.wiktionary.org/wiki/Module:links
+    # return urlword #design a function that mimics the behavior of https://en.wiktionary.org/wiki/Module:links
 
-def empirical_link_keyword(key, ground_truth):
+def empirical_keyword(key, ground_truth):
     # using  resultant html, find the corresponding link that corresponds to the key that gets actually created
     # this can be done using the parse api https://www.mediawiki.org/wiki/API:Parsing_wikitext and passing text to the Parse API (to the text argument?)
     """
@@ -115,7 +124,7 @@ def empirical_link_keyword(key, ground_truth):
     pass
 
 
-def emulated_link_keyword(key):
+def emulated_keyword(key):
     pass # actually run the Module links.lua and use that to generate the link
 
 

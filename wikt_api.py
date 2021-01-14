@@ -255,27 +255,30 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     print(txt)
     jsn = json.loads(txt) #type: json
     derivs = []
-    if qflags.deriv:
+
+    def onerror():
+        print(src)
+        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang)}")
+        if "info" in jsn["error"]:
+            if jsn["error"]["info"] == "The page you specified doesn't exist.":
+                raise MissingException(f"No page found for specified query {moduleimpl.keyword(word, biglang.langname)}.", missing_thing="page")
+            else:
+                raise ValueError(f"Unexpected error info {jsn['error']['info']}")
+        raise MissingException(
+            "Response returned an error!\nJSON: " + str(jsn["error"]),
+            missing_thing="everything")
+
+    if "error" in jsn:
+        onerror()
+    elif qflags.deriv:
         if "query" in jsn:
             derivs = [pair["title"] for pair in jsn["query"]["categorymembers"]]
             origin = Originator(me, o_id=query_id)
             return DummyQuery(me=me,origin=origin,child_queries=derivs,with_lang=Lang(langcode="en"))
-        elif "error" in jsn:
-            print(src)
-            print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang)}")
-            raise MissingException(
-                "Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]),
-                missing_thing="Everything")
 
     # https://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:English_terms_derived_from_the_Proto-Indo-European_root_*ple%E1%B8%B1-&cmprop=title
-
-
-    if "parse" in jsn:
+    elif "parse" in jsn:
         wikitext = jsn["parse"]["wikitext"]
-    elif "error" in jsn:
-        print(src)
-        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang)}")
-        raise MissingException("Response returned an error! Perhaps the page doesn't exist? \nJSON: " + str(jsn["error"]), missing_thing="Everything")
     else:
         raise Exception("Response malformed!" + str(jsn))
     # print(wikitext)
