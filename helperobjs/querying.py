@@ -26,11 +26,13 @@ class ThickQuery():
         self.def_id = _qflags.def_id
 
         self.word = _word
+
         self.lang = _Lang.langname
         assert word == self.word
         assert langname == self.lang
         # assert def_id == qdef_id
         self.Lang = _Lang
+        assert self.Lang  # It must not be blank.
 
         self.res = res
         self.wikitext = wikitext
@@ -50,7 +52,7 @@ class ThickQuery():
     @property
     def word_urlify(self):
         # return moduleimpl.urlword(self.word, self.lang)
-         return moduleimpl.urlword(self.word, self.biglang())
+         return moduleimpl.urlword(self.word, self.biglang(), crash=True) # we should actually crash because queries *must* have a language defined
     @property
     def wikitext_link(self):
         return moduleimpl.to_link(self.word, self.biglang())

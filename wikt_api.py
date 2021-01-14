@@ -232,14 +232,16 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         _, _, qflags = query2.query_to_qparts(me)
         def_id = qflags.def_id # None
     else:
-        word, biglang, qflags = query2.query_to_qparts(me)
+        word, biglang, qflags = query2.query_to_qparts(me, warn=False) # missing language is an expected value
         def_id = qflags.def_id
     if biglang is None:
         biglang = Lang()
 
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.org/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src = moduleimpl.to_link(word, biglang, qflags) # we take the word and lang and parse it into the corresponding wikilink
+    src = moduleimpl.to_link(word, biglang, qflags, warn=False)
+    # we take the word and lang and parse it into the corresponding wikilink
+    # again, having a null Lang is fine here
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
@@ -258,7 +260,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
 
     def onerror():
         print(src)
-        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang)}")
+        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang, warn=False)}") # if we're already throwing an error, we don't need to warn them, they're going to see
         if "info" in jsn["error"]:
             if jsn["error"]["info"] == "The page you specified doesn't exist.":
                 raise MissingException(f"No page found for specified query {moduleimpl.keyword(word, biglang.langname)}.", missing_thing="page")

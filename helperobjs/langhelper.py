@@ -4,7 +4,7 @@ from pyetymology.langcode import langcodes
 
 
 class Lang:
-    def __init__(self, langcode: str=None, langname: str=None, langqstr: str=None, is_deconstr: bool=False):
+    def __init__(self, langcode: str=None, langname: str=None, langqstr: str=None, is_deconstr: bool=False, warn=True):
         """
         langcode: Wikt Language Code            ie. es, ine-pro
         langname: Name of Language              ie. Spanish, Proto-Indo-European
@@ -39,7 +39,8 @@ class Lang:
             self.langcode = None
             self.langname = langname
             if not langname:
-                warnings.warn("Neither langcode nor langname received; not enough information!")
+                if warn:
+                    warnings.warn("Neither langcode nor langname received.")
                 self.reconstr = False
             else:
                 self.reconstr = langcodes.is_name_reconstr(self.langname)
