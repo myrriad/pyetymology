@@ -4,7 +4,7 @@ import urllib
 import warnings
 from typing import Tuple, Union
 
-from pyetymology.helperobjs.langhelper import Lang
+from pyetymology.langhelper import Language
 from pyetymology.langcode import langcodes
 
 def urllang(lang: str):
@@ -17,7 +17,7 @@ class QueryFlags:
         self.deriv = deriv
 
 
-def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None, qflags:QueryFlags=None, target_lang:str="English", target_results:int=50, warn=True):
+def to_link(word_or_urlword: str, lang_or_none:Union[Language, str, None] = None, qflags:QueryFlags=None, target_lang:str= "English", target_results:int=50, warn=True):
     if lang_or_none is None:
         _urlword = word_or_urlword
         return "http://en.wiktionary.org/w/api.php?action=parse&page=" + _urlword + "&prop=wikitext&formatversion=2&format=json"
@@ -30,12 +30,12 @@ def to_link(word_or_urlword: str, lang_or_none:Union[Lang, str, None] = None, qf
                    f"Category:{target_lang}_terms_derived_from_the_{urllang(lang)}_root_{urlword(word, lang.langname, strip_reconstr_star=False, warn=warn)}&cmprop=title" \
                    f"&format=json&cmlimit={target_results}"
             #  to_link(urlword(word=word, lang=lang))
-        elif isinstance(lang, str) or isinstance(lang, Lang):
+        elif isinstance(lang, str) or isinstance(lang, Language):
             return to_link(urlword(word=word, lang=lang, warn=warn))
         else:
             raise TypeError(f"lang has unexpected type {type(lang)}")
 
-def urlword(word: str, lang: Union[str, Lang, None], strip_reconstr_star=True, warn=True, crash=False) -> str:  # TODO: test this
+def urlword(word: str, lang: Union[str, Language, None], strip_reconstr_star=True, warn=True, crash=False) -> str:  # TODO: test this
     """
     Generates a urlword from what's used in the template.
     See https://en.wiktionary.org/wiki/Template:mention under "|2= (optional)
@@ -68,7 +68,7 @@ def urlword(word: str, lang: Union[str, Lang, None], strip_reconstr_star=True, w
     if isinstance(lang, str):
         # lang is langname
         return url(keyword(word, lang, strip_reconstr_star=strip_reconstr_star))
-    assert isinstance(lang, Lang)
+    assert isinstance(lang, Language)
     if lang.reconstr:
         _urllang = urllang(lang)  # TODO: refine this
         assert isinstance(lang.langname, str)

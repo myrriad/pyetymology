@@ -7,9 +7,9 @@ import mwparserfromhell as mwp
 import requests
 from mwparserfromhell.wikicode import Wikicode
 
-from pyetymology.helperobjs import query2
-from pyetymology.helperobjs.langhelper import Lang
-from pyetymology.helperobjs.querying import ThickQuery, DummyQuery
+import pyetymology.queryobjects
+from pyetymology.langhelper import Language
+from pyetymology.queryobjects import ThickQuery, DummyQuery
 from pyetymology.langcode.cache import Cache
 import grandalf.utils as grutils
 import networkx as nx
@@ -26,7 +26,7 @@ import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology.etyobjects import EtyRelation, WordRelation, Originator, LemmaRelation, DescentRelation, \
-    MissingException, InputException, MissingInputException
+    MissingException, InputException
 from pyetymology.lexer import Header
 from pyetymology.module import moduleimpl
 
@@ -225,17 +225,17 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     qflags = None
     if working_G:
         node = find_node_by_query(working_G, me)
-        word, biglang, qflags = query2.node_to_qparts(node)
+        word, biglang, qflags = pyetymology.queryobjects.node_to_qparts(node)
         assert qflags is None
         found = word or biglang
     if found:
-        _, _, qflags = query2.query_to_qparts(me)
+        _, _, qflags = pyetymology.queryobjects.query_to_qparts(me)
         def_id = qflags.def_id # None
     else:
-        word, biglang, qflags = query2.query_to_qparts(me, warn=False) # missing language is an expected value
+        word, biglang, qflags = pyetymology.queryobjects.query_to_qparts(me, warn=False) # missing language is an expected value
         def_id = qflags.def_id
     if biglang is None:
-        biglang = Lang()
+        biglang = Language()
 
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.org/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
@@ -276,7 +276,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         if "query" in jsn:
             derivs = [pair["title"] for pair in jsn["query"]["categorymembers"]]
             origin = Originator(me, o_id=query_id)
-            return DummyQuery(me=me,origin=origin,child_queries=derivs,with_lang=Lang(langcode="en"))
+            return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
 
     # https://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:English_terms_derived_from_the_Proto-Indo-European_root_*ple%E1%B8%B1-&cmprop=title
     elif "parse" in jsn:
@@ -291,7 +291,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else biglang.langname)
     assert langname
     if not biglang:
-        biglang = Lang(langname=langname)
+        biglang = Language(langname=langname)
     me = word + "#" + biglang.langqstr  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
     assert word
     assert langname

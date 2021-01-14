@@ -1,7 +1,7 @@
 import requests
 
 # Credits to Suyash Behera at https://pypi.org/project/wiktionaryparser/
-from pyetymology import helper_old
+from pyetymology.sandbox import helper_old
 
 session = requests.Session()
 session.mount("http://", requests.adapters.HTTPAdapter(max_retries=2))  # retry up to 2 times

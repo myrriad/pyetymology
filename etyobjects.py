@@ -1,4 +1,3 @@
-import json
 import string
 import warnings
 from typing import Any
@@ -8,9 +7,11 @@ import networkx as nx
 import mwparserfromhell
 from mwparserfromhell.nodes import Template
 
-from pyetymology.helperobjs import query2
+import pyetymology.queryobjects
 from pyetymology.langcode import langcodes
 from pyetymology.module import moduleimpl
+
+
 
 
 @property
@@ -78,7 +79,7 @@ class Affixal:
 
 class WordRelation:
     def matches_query(self, me:str, strict=False, ultra_strict=False) -> bool:
-        word, biglang, _ = query2.query_to_qparts(me)
+        word, biglang, _ = pyetymology.queryobjects.query_to_qparts(me)
         return moduleimpl.matches(self.word, self.langname, word, biglang.langname, strict=strict, ultra_strict=ultra_strict)
         # TODO: NOT iterate through entire graph when trying to find a match
 
@@ -267,7 +268,7 @@ class DescentRelation(WordRelation):
         self.origin = origin  # type: Originator  # TODO: create convenience super() init method
 
         if query_opt:
-            word, _Lang, qflags = query2.query_to_qparts(query_opt)
+            word, _Lang, qflags = pyetymology.queryobjects.query_to_qparts(query_opt)
             self.word = word
             self.langname = _Lang.langname
             self.rtype = "custom"

@@ -3,7 +3,7 @@ import warnings
 from pyetymology.langcode import langcodes
 
 
-class Lang:
+class Language:
     def __init__(self, langcode: str=None, langname: str=None, langqstr: str=None, is_deconstr: bool=False, warn=True):
         """
         langcode: Wikt Language Code            ie. es, ine-pro
@@ -55,7 +55,7 @@ class Lang:
         return bool(self.langcode or self.langname)
 
     def __eq__(self, other):
-        return isinstance(other, Lang) and self.langcode == other.langcode and self.langname == other.langname and self.reconstr == other.reconstr
+        return isinstance(other, Language) and self.langcode == other.langcode and self.langname == other.langname and self.reconstr == other.reconstr
 
     def __str__(self):
         return self.langqstr if self else ""
