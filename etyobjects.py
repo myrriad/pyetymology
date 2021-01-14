@@ -326,6 +326,7 @@ class MissingException(Exception):
         super().__init__(self, message)
         self.G = G
         self.missing_thing = missing_thing
+        self.message = message
 
 class MissingInputException(MissingException):
     def __init__(self, *args, **kwargs):

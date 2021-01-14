@@ -193,6 +193,7 @@ def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=T
             if use_lang:
                 usrin = use_lang
             elif use_input:  # if it's possible to read input from the console
+
                 usrin = input("Choose a lang from these options: " + str(lang_options))
             else:  # if such is not possible
                 raise MissingException(f"Could not auto-infer language from the languages {str(lang_options)}.", missing_thing="language_specification")
