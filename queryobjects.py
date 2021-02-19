@@ -75,9 +75,9 @@ def from_tupled(query: Tuple[str, str, str, str], wikiresponse: Tuple[Wikicode, 
 def node_to_qparts(node: Union[EtyRelation, LemmaRelation, None]) -> Tuple[str, Language, QueryFlags]:
     if node:
         word = node.word
-        if node.lang:
+        if node.langcode:
             # this is necessary for say Latin plico. We find the existing template from the suggestion,
-            langcode = node.lang
+            langcode = node.langcode
             # langname = node.langname
             # then we deduct the actual word and lang
             lang = Language(langcode=langcode)

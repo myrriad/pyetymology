@@ -4,21 +4,26 @@ from pyetymology.langcode import langcodes
 
 
 class Language:
-    def __init__(self, langcode: str=None, langname: str=None, langqstr: str=None, is_deconstr: bool=False, warn=True):
+    def __init__(self, langcode: str=None, langname: str=None, langqstr: str=None, is_reconstr: bool=False, warn=True):
         """
         langcode: Wikt Language Code            ie. es, ine-pro
         langname: Name of Language              ie. Spanish, Proto-Indo-European
         langqstr: Query string for language     ie. Spanish, R:Proto-Indo-European
+
+        WARNING: Reconstruction assumption only works one way!
+        langqstr                                Proto-Indo-European -> R:Proto-Indo-European
+        BUT
+        langqstr                                Old English does not get inferred!
         """
         analyze_lname=False
         if langcode: # if we're given a langcode, we can generate everything else
-            if not is_deconstr:
-                is_deconstr = langcodes.is_reconstr(langcode)
+            if not is_reconstr:
+                is_reconstr = langcodes.is_reconstr(langcode)
             if not langname:
                 langname = langcodes.name(langcode)
             self.langcode = langcode
             self.langname = langname
-            self.reconstr = is_deconstr
+            self.reconstr = is_reconstr
         elif langqstr: # if we're not given a langcode, but we're given a langqstr
             self.langcode = None
             if langqstr.startswith("R:"):
@@ -38,17 +43,21 @@ class Language:
             # this is tricky
             self.langcode = None
             self.langname = langname
+
+            if is_reconstr is None:
+                if self.langname.startswith("Proto"):
+                    self.reconstr = True
+                else:
+                    self.reconstr = False
+                    # !!! If we're given only the langname, it is usual that it is not reconstructed
+                    # TODO: Some languages, such as Old English, have reconstructed terms yet are not proto-languages!
+                    # TODO: HUGE ASSUMPTION! - that all non-proto languages are not reconstructed, and that the user properly formatted those langs right!
+            else:
+                self.reconstr = is_reconstr
+                # langcodes.is_name_reconstr(self.langname)
             if not langname:
                 if warn:
                     warnings.warn("Neither langcode nor langname received.")
-                self.reconstr = False
-            else:
-                self.reconstr = langcodes.is_name_reconstr(self.langname)
-                    # !!! If we're given only the langname, it is usual that it is not reconstructed
-                if self.reconstr:
-                    warnings.warn(f"langcode was not given, yet langname is {langname} and starts with \"Proto-\", "
-                                  f"so it has been assumed to be a reconstructed language! Be aware that that assumption may be incorrect. ")
-
         self.langqstr = ("R:" + self.langname) if self.reconstr and self.langname else (self.langname)
 
     def __bool__(self):

@@ -90,6 +90,20 @@ class WordRelation:
     def __bool__(self):
         return not self.null
 
+    def __init__(self, params, rtype, langcode, word, _selflang=None):
+        self.params = params
+        self.rtype = rtype
+        self.langcode = langcode
+        self.langname = langcodes.name(langcode, use_ety=True, use_fam=True)
+        if langcode and not self.langname:
+            print(f"{langcode} is None")
+        self.word = word
+        if _selflang:
+            self._selflang = _selflang
+            self._selflangname = langcodes.name(_selflang)
+
+
+
 class EtyRelation(WordRelation):
     ety_abbrs = {"derived": "der",
                  "inherited": "inh",
@@ -163,15 +177,9 @@ class EtyRelation(WordRelation):
             warnings.warn("Template {rtype} is not recognized!")
             self.null = True  # if it's none that are recognized, mark self as null
 
-        self.params = params
-        self.rtype = rtype
-        self.lang = lang
-        self.langname = langcodes.name(lang, use_ety=True, use_fam=True)
-        if lang and not self.langname:
-            print(f"{lang} is None")
-        self._selflang = _selflang
-        self._selflangname = langcodes.name(_selflang)
-        self.word = word
+        WordRelation.__init__(self, params, rtype, lang, word, _selflang)
+
+
 
     def __str__(self):
         if not self:
@@ -228,13 +236,7 @@ class LemmaRelation(WordRelation):
             lang = template.name[:dashidx]
 
         # print(f"Found lemma?: lang: {lang} word: {word}")
-        self.params = params
-        self.rtype = rtype
-        self.lang = lang
-        self.langname = langcodes.name(lang, use_ety=True, use_fam=True)
-        if lang and not self.langname:
-            print(f"{lang} is None")
-        self.word = word
+        WordRelation.__init__(self, params, rtype, lang, word)
 
     def matches(self, other):
         return type(other) == LemmaRelation and repr(self) == repr(other)
@@ -296,15 +298,7 @@ class DescentRelation(WordRelation):
         else:
             self.null = True  # if it's none that are recognized, mark self as null
 
-        self.params = params
-        self.rtype = rtype
-        self.lang = lang
-        self.langname = langcodes.name(lang, use_ety=True, use_fam=True)
-        if lang and not self.langname:
-            print(f"{lang} is None")
-        self._selflang = _selflang
-        self._selflangname = langcodes.name(_selflang)
-        self.word = word
+        WordRelation.__init__(self, params, rtype, lang, word, _selflang)
 
     def __str__(self):
         if not self:

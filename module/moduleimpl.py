@@ -64,15 +64,15 @@ def urlword(word: str, lang: Union[str, Language, None], strip_reconstr_star=Tru
             raise ValueError(f"{word}'s lang is blank!")
         if warn:
             warnings.warn(f"retrieving {word}'s urlword without a lang! no macrons etc.")
-        return url(keyword(word, strip_reconstr_star=strip_reconstr_star))
+        return urlify(keyword(word, strip_reconstr_star=strip_reconstr_star))
     if isinstance(lang, str):
         # lang is langname
-        return url(keyword(word, lang, strip_reconstr_star=strip_reconstr_star))
+        return urlify(keyword(word, lang, strip_reconstr_star=strip_reconstr_star))
     assert isinstance(lang, Language)
     if lang.reconstr:
         _urllang = urllang(lang)  # TODO: refine this
         assert isinstance(lang.langname, str)
-        return "Reconstruction:" + _urllang + "/" + url(keyword(word, lang.langname))
+        return "Reconstruction:" + _urllang + "/" + urlify(keyword(word, lang.langname))
     else:
         return urlword(word, lang.langname, warn=warn, crash=crash)
 
@@ -92,14 +92,14 @@ anti_macron = [
     ("Ȳ", "Y"),
     ("ȳ", "y")]
 
-def url(word):
+def urlify(word):
     return urllib.parse.quote_plus(word)
 
 
-def keyword(word: str, langname: str=None, is_deconstr=None, strip_reconstr_star=True):
-    return mimicked_keyword(word, langname, is_deconstr=is_deconstr, strip_reconstr_star=strip_reconstr_star)
+def keyword(word: str, langname: str=None, is_reconstr=None, strip_reconstr_star=True):
+    return mimicked_keyword(word, langname, is_reconstr=is_reconstr, strip_reconstr_star=strip_reconstr_star)
 
-def mimicked_keyword(word: str, langname: str=None, is_deconstr=None, strip_reconstr_star=True) -> Tuple[str, str]:
+def mimicked_keyword(word: str, langname: str=None, is_reconstr=None, strip_reconstr_star=True) -> Tuple[str, str]:
     """
     Formerly mimicked_link_keyword
     """
@@ -108,7 +108,7 @@ def mimicked_keyword(word: str, langname: str=None, is_deconstr=None, strip_reco
             word = word.replace(a, b)
 
     if word.startswith("*") and strip_reconstr_star:
-        if is_deconstr or langname and langcodes.is_name_reconstr(langname):
+        if is_reconstr or langname and langname.startswith("Proto"):  # TODO: Old English
             word = word[1:]
 
     return word
