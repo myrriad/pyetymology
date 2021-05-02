@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from mwparserfromhell.wikicode import Wikicode
 
+from pyetymology.eobjects.wikikey import WikiKey
 from pyetymology.etyobjects import Originator
 from pyetymology.langhelper import Language
 from pyetymology.emulate.moduleimpl import QueryFlags
@@ -58,9 +59,10 @@ class ThickQuery():
     def wikitext_link(self):
         return moduleimpl.to_link(self.word, self.biglang())
 
-    # @classmethod
-    # def from_key(cls, wkey: WikiKey, me:str, langname:str, ):
-
+    @classmethod
+    def from_key(cls, wkey: WikiKey, me:str, origin):
+        return ThickQuery(me=me, word=wkey.word, langname=wkey.Lang.langname, def_id=wkey.def_id, res=wkey.result.wikiresponse, wikitext=wkey.result.wikitext, dom=wkey.result.dom, origin=origin)
+        pass
 
 class DummyQuery(ThickQuery):
     def __init__(self, me:str, origin:Originator, child_queries: List[str], with_lang:Language):

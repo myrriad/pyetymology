@@ -20,7 +20,7 @@ class WikiKey:
         self.word = word
         self.Lang = Lang
         self.qflags = qflags
-        self.result = None
+        self.result = None #type: Optional[APIResult]
         self.src = moduleimpl.to_link(word, Lang, qflags, warn=False)
 
     @property
@@ -42,6 +42,9 @@ class WikiKey:
             assert not self.result # make sure that we aren't duplicating results
             self.result = APIResult(self.fullurl)
         return self.result
+
+    def load_wikitext(self):
+        self.result.load_wikitext(self)
 
     def __bool__(self):
         return bool(self.word or self.Lang)

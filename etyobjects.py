@@ -79,8 +79,8 @@ class Affixal:
 
 
 class WordRelation:
-    def matches_query(self, me:str, strict=False, ultra_strict=False) -> bool:
-        word, biglang, _ = pyetymology.queryutils.query_to_qparts(me)
+    def matches_query(self, me:str, strict=False, ultra_strict=False, warn=False) -> bool:
+        word, biglang, _ = pyetymology.queryutils.query_to_qparts(me, warn)
         return moduleimpl.matches(self.word, self.langname, word, biglang.langname, strict=strict, ultra_strict=ultra_strict)
         # TODO: NOT iterate through entire graph when trying to find a match
 

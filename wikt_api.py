@@ -61,13 +61,13 @@ def find_node_by_origin(G: nx.Graph, origin: Originator) -> Union[WordRelation, 
     return retn[0]
 
 
-def find_node_by_query(GG: nx.DiGraph, query: str) -> Union[WordRelation, None]:
+def find_node_by_query(GG: nx.DiGraph, query: str, warn=True) -> Union[WordRelation, None]:
     # _ = [print(x) for x in GG.nodes]
     retn = []
     for node in GG.nodes:
         if isinstance(node, WordRelation):
             node: WordRelation
-            if node.matches_query(query):
+            if node.matches_query(query, warn=warn):
                 retn.append(node)
         elif type(node) is Originator:
             pass
@@ -85,10 +85,10 @@ def find_node_by_query(GG: nx.DiGraph, query: str) -> Union[WordRelation, None]:
 def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> Union[ThickQuery, List[str]]:
 
     if not me:
-        me = input("Enter a query: " + me)
+        me = input("Enter a query: " + me) # me will usually be no-lang, so treat it as such and don't warn
     done = False
     if working_G:
-        node = find_node_by_query(working_G, me)
+        node = find_node_by_query(working_G, me, warn=False)
         # word, biglang, qflags = pyetymology.queryobjects.node_to_qparts(node)
         # assert qflags is None
         wkey = WikiKey.from_node(node)
@@ -96,7 +96,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
             # word = wkey.word
             # biglang = wkey.Lang
             assert wkey.qflags is None
-            wkey.qflags = pyetymology.queryutils.query_to_qparts(me)[2] # merge query and node
+            wkey.qflags = pyetymology.queryutils.query_to_qparts(me, warn=False)[2] # merge query and node
             done = True
     if not done: # default condition
         wkey = WikiKey.from_query(me, warn=False) # we permit null langs here
@@ -117,8 +117,8 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     # https://en.wiktionary.org/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
 
     result = wkey.load_result() # result = APIResult(src) # this automatically throws on error
-    result.load_wikitext(wkey)
-
+    # result.load_wikitext(wkey)
+    wkey.load_wikitext()
     # if wkey.deriv:
     #     if "query" in result.jsn:
     #         derivs = [pair["title"] for pair in result.jsn["query"]["categorymembers"]]
@@ -142,15 +142,22 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
 
     # dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else biglang.langname)
     assert langname
-    if not wkey.Lang:
+    # if not wkey.Lang: # investigate the consequences of Lang switching
+    # EDIT: it should be limited because wkey is never used and this merely updates the langname to always be correct
+    # The only time this might backfire is if Language(langname=langname) malfunctions or is not bijective
+    # the only time it fails is if wkey.Lang.langqstr changes unexpectedly
+    if wkey.Lang.langname != langname:
+        if not wkey.Lang:
+            # if Lang is something else, then we switched langs altogether. This is really weird
+            warnings.warn(f"Switching langs from {wkey.Lang.langname} to {langname}!")
         wkey.Lang = Language(langname=langname) # This is where Lang inferral happens
     me = wkey.word + "#" + wkey.Lang.langqstr  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
     assert wkey.word
     assert langname
 
     origin = Originator(me, o_id=query_id)
-    bigQ = ThickQuery(me=me, word=wkey.word, langname=langname, def_id=wkey.def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)   # TODO: pass Lang into ThickQuery
-    return bigQ  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
+    # return ThickQuery(me=me, word=wkey.word, langname=langname, def_id=wkey.def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)   # TODO: pass Lang into ThickQuery
+    return ThickQuery.from_key(wkey, me, origin)  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
 
 
 def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False, cog_lang_filter=None) -> nx.DiGraph:
