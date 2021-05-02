@@ -8,6 +8,7 @@ import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
+import pyetymology.eobjects.mwparserhelper
 from pyetymology import wikt_api as wx, etyobjects, wikt_api
 from pyetymology import main
 from pyetymology.etyobjects import MissingException
@@ -28,7 +29,7 @@ class TestLlegar:
         monkeypatch.setattr('builtins.input', lambda _: "Spanish")
 
         res, dom = fetch_resdom("llegar")
-        sections = list(wx.all_lang_sections(dom)) #type: List[List[Wikicode]] # This has been changed, b/c the removal of antiredundance
+        sections = list(pyetymology.eobjects.mwparserhelper.all_lang_sections(dom)) #type: List[List[Wikicode]] # This has been changed, b/c the removal of antiredundance
         assert sections == ['==Asturian==\n\n', '==Catalan==\n\n', '==Old Irish==\n\n', '==Spanish==\n\n']
 
 

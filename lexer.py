@@ -2,6 +2,7 @@ from typing import List, Union
 
 from mwparserfromhell.wikicode import Wikicode
 
+import pyetymology.eobjects.mwparserhelper
 from pyetymology import wikt_api as wikt
 from pyetymology.langcode import poscodes
 
@@ -63,7 +64,7 @@ def lex(dom: List[Wikicode]) -> List[Entry]:
     preety = []
     desc = []  # type: List[Header]
     did_lemma = False
-    for lvl3plus in wikt.sections_by_level(dom, 3):
+    for lvl3plus in pyetymology.eobjects.mwparserhelper.sections_by_level(dom, 3):
 
         lvl3 = lvl3plus[0]
         if lvl3.startswith("===Etymology"):
@@ -74,7 +75,7 @@ def lex(dom: List[Wikicode]) -> List[Entry]:
                 is_multi_ety = False
                 assert not ety  # There should be exactly one ety
                 ety = Header(lvl3, lvl3plus[1:])
-                lvl4s = wikt.sections_by_level(lvl3plus[1:], 4)
+                lvl4s = pyetymology.eobjects.mwparserhelper.sections_by_level(lvl3plus[1:], 4)
                 for lvl4plus in lvl4s:
                     lvl4 = lvl4plus[0]
                     h = Header(lvl4, lvl4plus[1:], lvl=4)
@@ -95,7 +96,7 @@ def lex(dom: List[Wikicode]) -> List[Entry]:
         elif lvl3.startswith("===Root"):
             # Reconstructed langs
             # TODO: Do the Descendants tab in for nonReconstructed langs
-            lvl4s = wikt.sections_by_level(lvl3plus[1:], 4)
+            lvl4s = pyetymology.eobjects.mwparserhelper.sections_by_level(lvl3plus[1:], 4)
             for lvl4plus in lvl4s:
                 lvl4 = lvl4plus[0]
                 h = Header(lvl4, lvl4plus[1:], lvl=4)

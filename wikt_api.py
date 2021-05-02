@@ -1,13 +1,14 @@
-import builtins
-import json
-import string
 import warnings
 
 import mwparserfromhell as mwp
 import requests
-from mwparserfromhell.wikicode import Wikicode
 
+import pyetymology.emulate.template2url
 import pyetymology.queryobjects
+import pyetymology.queryutils
+from pyetymology.eobjects import fixins
+from pyetymology.eobjects.mwparserhelper import wikitextparse, reduce_to_one_lang
+from pyetymology.eobjects.wikikey import WikiKey
 from pyetymology.langhelper import Language
 from pyetymology.queryobjects import ThickQuery, DummyQuery
 from pyetymology.langcode.cache import Cache
@@ -20,104 +21,22 @@ import matplotlib.pyplot as plt
 from pyetymology import simple_sugi, lexer
 
 ### START helper_api.py
-from typing import List, Generator, Dict, Any, Tuple, Union
+from typing import List, Dict, Union
 
 import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology.etyobjects import EtyRelation, WordRelation, Originator, LemmaRelation, DescentRelation, \
-    MissingException, InputException
+    MissingException
 from pyetymology.lexer import Header
-from pyetymology.module import moduleimpl
 
+from pyetymology.eobjects.fixins import input
+"""
+!! IMPORTANT! input is modified!
+"""
 
-def input(__prompt: Any) -> str:
-    global _is_plot_active
-    if _is_plot_active:
-        print("Close MatplotLib to Continue")
-        plt.show()
-    try:
-        return builtins.input(__prompt)
-    except EOFError as e_info:
-        raise InputException("Unable to read from console.") from None
 
 online = True # TODO: online=False displays wrong versions of ety trees without throwing an exception
-
-session = requests.Session()
-session.mount("http://", requests.adapters.HTTPAdapter(max_retries=2))  # retry up to 2 times
-session.mount("https://", requests.adapters.HTTPAdapter(max_retries=2))
-
-
-def has_exact_prefix(str, prefix):
-    return str.startswith(prefix) and not str.startswith(prefix + "=")
-
-
-def sections_by_level(sections: List[Wikicode], level: int, recursive=True, flat=False) -> Generator[Wikicode, None, None]:
-    """
-    Takes in parameter l, which corresponds to a "main" heading level.
-    Yields each "main" header of that specified heading level.
-    If there is a subheader, it will be packaged after the specified main header that precedes it
-    """
-
-    in_section = False
-    prefix = "=" * level
-    childprefix = prefix + "="
-    builder = []
-
-    def yieldme(builder):
-        if not recursive and flat:
-            assert len(builder) == 1
-            return builder[0]
-        else:
-            return builder
-    for sec in sections:
-
-        if has_exact_prefix(sec, prefix):  # we've reached the next header
-            if in_section:
-                yield yieldme(builder) # if we're already in section, that means yield previous work
-            else:
-                in_section = True # don't yield if we're just starting out, as it will be empty
-
-            # Antiredundance removed b/c of possible injection; plus, there's a better way of making mwp return it flat in query()
-            added = sec
-            builder = [added]  # start building
-            continue
-        if not in_section: # skip everything until we get to our first header
-            continue
-        if sec.startswith(childprefix):  # if it's a child (this will be skipped until we actually get in to the first section.)
-            if recursive:
-                builder.append(sec)
-            continue
-        break # we're in section, but it's neither a child nor a sibling, therefore it's a parent and we should exit.
-
-    if builder:
-        yield yieldme(builder) # yield stragglers
-
-
-def sections_by_lang(sections: List[Wikicode], lang: string) -> Generator[Wikicode, None, None]:
-    in_section = False
-    for sec in sections:
-
-        if not in_section and sec.startswith("==" + lang):  # we've reached the desired section
-            # print(repr(sec))
-            in_section = True
-            yield sec
-            continue
-        if in_section and sec.startswith("==="):
-            # print(repr(sec))
-            yield sec
-            continue
-        if in_section and has_exact_prefix(sec, "=="):  # we've reached the next header
-            in_section = False
-            break
-
-
-def all_lang_sections(sections: List[Wikicode], recursive=False, flat=True) -> Generator[Wikicode, None, None]:
-    return sections_by_level(sections, 2, recursive=recursive, flat=flat)
-
-
-_is_plot_active = False
-
 
 def is_in(elem, abbr_set: Dict[str, str]):
     return elem in abbr_set.keys() or elem in abbr_set.values()
@@ -163,141 +82,74 @@ def find_node_by_query(GG: nx.DiGraph, query: str) -> Union[WordRelation, None]:
     return retn[0]
 
 
-def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
-    res = mwp.parse(wikitext)  # type: Wikicode
-    # res = wtp.parse(wikitext)
-    dom = res.get_sections(flat=not redundance)
-    return res, dom
-
-def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=True, use_input=True) -> Tuple[List[Wikicode], str, str, str]:
-    """
-    Returns sections of only 1 lang
-    """
-    lang = ""
-    # try to extract lang from dom
-    found_langs = all_lang_sections(dom, flat=True)
-
-    def _compr(found_langs):
-        for found_lang in found_langs:
-            found_lang: Wikicode
-            h = found_lang[2:]  # EDIT: with flat=True, disregard the following. found_lang should be array of length 1, because recursive is false
-            yield h[:h.index("==")]
-
-    lang_options = list(_compr(found_langs))
-    if len(lang_options) == 0:
-        raise MissingException("Zero langs detected !? !?", missing_thing="language_sections")
-    elif len(lang_options) == 1:
-        lang = lang_options[0]
-    else:
-        if not lang:
-            if use_lang:
-                usrin = use_lang
-            elif use_input:  # if it's possible to read input from the console
-
-                usrin = input("Choose a lang from these options: " + str(lang_options))
-            else:  # if such is not possible
-                raise MissingException(f"Could not auto-infer language from the languages {str(lang_options)}.", missing_thing="language_specification")
-            if usrin in lang_options:
-                lang = usrin
-            elif permit_abbrevs:
-                for lang_opt in lang_options: # abbreviations
-                    if str.lower(lang_opt).startswith(str.lower(usrin)):
-                        lang = lang_opt
-            if not lang:
-                raise MissingException(f"Your input \"{usrin}\" is not recognized in the options {str(lang_options)}", missing_thing="language_section")
-
-    # me = word + "#" + lang
-    lang_secs = list(sections_by_lang(dom, lang))
-
-    if not lang_secs:
-        raise MissingException(f"No entry was found in wikitext under language {lang} !? !? "
-                               f"(Unless there is a bug, this exception shouldn't be called!) DOM: \n\t{repr(dom)}", missing_thing="language_section")
-    assert lang
-    return lang_secs, lang
-
-
 def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> Union[ThickQuery, List[str]]:
 
     if not me:
         me = input("Enter a query: " + me)
-
-    found = False
-    qflags = None
+    done = False
     if working_G:
         node = find_node_by_query(working_G, me)
-        word, biglang, qflags = pyetymology.queryobjects.node_to_qparts(node)
-        assert qflags is None
-        found = word or biglang
-    if found:
-        _, _, qflags = pyetymology.queryobjects.query_to_qparts(me)
-        def_id = qflags.def_id # None
-    else:
-        word, biglang, qflags = pyetymology.queryobjects.query_to_qparts(me, warn=False) # missing language is an expected value
-        def_id = qflags.def_id
-    if biglang is None:
-        biglang = Language()
+        # word, biglang, qflags = pyetymology.queryobjects.node_to_qparts(node)
+        # assert qflags is None
+        wkey = WikiKey.from_node(node)
+        if wkey:
+            # word = wkey.word
+            # biglang = wkey.Lang
+            assert wkey.qflags is None
+            wkey.qflags = pyetymology.queryutils.query_to_qparts(me)[2] # merge query and node
+            done = True
+    if not done: # default condition
+        wkey = WikiKey.from_query(me, warn=False) # we permit null langs here
+        # word, biglang, qflags = pyetymology.queryobjects.query_to_qparts(me, warn=False) # missing language is an expected value
+
+
+    if wkey.Lang is None:
+        wkey.Lang = Language()
 
     # word_urlify = urllib.parse.quote_plus(word)
     # src = "https://en.wiktionary.org/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    src = moduleimpl.to_link(word, biglang, qflags, warn=False)
+    # src = moduleimpl.to_link(word, biglang, qflags, warn=False)
     # we take the word and lang and parse it into the corresponding wikilink
     # again, having a null Lang is fine here
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
     # TODO: and to load the page we need to know the word_urlify
     # TODO: and word_urlify must remove macrons
     # https://en.wiktionary.org/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
-    if online:
-        global session
-        res = session.get(src)
-        #cache res TODO: implement better caching with test_'s fetch stuff
-    else:
-        raise Exception("offline browsing not implemented yet")
 
-    txt = res.text
-    print(txt)
-    jsn = json.loads(txt) #type: json
-    derivs = []
+    result = wkey.load_result() # result = APIResult(src) # this automatically throws on error
+    result.load_wikitext(wkey)
 
-    def onerror():
-        print(src)
-        print(f"https://en.wiktionary.org/wiki/{moduleimpl.urlword(word, biglang, warn=False)}") # if we're already throwing an error, we don't need to warn them, they're going to see
-        if "info" in jsn["error"]:
-            if jsn["error"]["info"] == "The page you specified doesn't exist.":
-                raise MissingException(f"No page found for specified query {moduleimpl.keyword(word, biglang.langname)}.", missing_thing="page")
-            else:
-                raise ValueError(f"Unexpected error info {jsn['error']['info']}")
-        raise MissingException(
-            "Response returned an error!\nJSON: " + str(jsn["error"]),
-            missing_thing="everything")
-
-    if "error" in jsn:
-        onerror()
-    elif qflags.deriv:
-        if "query" in jsn:
-            derivs = [pair["title"] for pair in jsn["query"]["categorymembers"]]
+    # if wkey.deriv:
+    #     if "query" in result.jsn:
+    #         derivs = [pair["title"] for pair in result.jsn["query"]["categorymembers"]]
+    #         origin = Originator(me, o_id=query_id)
+    #         return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
+    if wkey.deriv:
+        if result.wikitype == 'query':
+            derivs = result.derivs
             origin = Originator(me, o_id=query_id)
             return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
-
     # https://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:English_terms_derived_from_the_Proto-Indo-European_root_*ple%E1%B8%B1-&cmprop=title
-    elif "parse" in jsn:
-        wikitext = jsn["parse"]["wikitext"]
-    else:
-        raise Exception("Response malformed!" + str(jsn))
+    # elif "parse" in result.jsn:
+    #     wikitext = result.jsn["parse"]["wikitext"]
+    # else:
+    #     raise Exception("Response malformed!" + str(result.jsn))
     # print(wikitext)
-
-    res, dom = wikitextparse(wikitext, redundance=redundance)
+    elif result.wikitype == 'parse':
+        wikitext, res, dom, langname = result.wikitext, result.wikiresponse, result.dom, result.langname
+    # res, dom = wikitextparse(wikitext, redundance=redundance)
     # Here was the lang detection
 
-    dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else biglang.langname)
+    # dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else biglang.langname)
     assert langname
-    if not biglang:
-        biglang = Language(langname=langname)
-    me = word + "#" + biglang.langqstr  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
-    assert word
+    if not wkey.Lang:
+        wkey.Lang = Language(langname=langname) # This is where Lang inferral happens
+    me = wkey.word + "#" + wkey.Lang.langqstr  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
+    assert wkey.word
     assert langname
 
     origin = Originator(me, o_id=query_id)
-    bigQ = ThickQuery(me=me, word=word, langname=langname, def_id=def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)   # TODO: pass Lang into ThickQuery
+    bigQ = ThickQuery(me=me, word=wkey.word, langname=langname, def_id=wkey.def_id, res=res, wikitext=wikitext, dom=dom, origin=origin)   # TODO: pass Lang into ThickQuery
     return bigQ  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
 
 
@@ -568,5 +420,4 @@ def draw_graph(G, simple=False, pause=False):
     else:
         # plt.pause(0.01) pauses for 0.01s, and runs plt's GUI main loop
         plt.pause(0.01)
-    global _is_plot_active
-    _is_plot_active = True
+        fixins._is_plot_active = True

@@ -4,6 +4,8 @@ import dill
 import networkx as nx
 from mwparserfromhell.wikicode import Wikicode
 
+import pyetymology.eobjects.apiresult
+import pyetymology.eobjects.mwparserhelper
 from pyetymology import wikt_api as wx, queryobjects
 from pyetymology.etyobjects import Originator
 from pyetymology.queryobjects import ThickQuery
@@ -42,8 +44,8 @@ def fetch_query(topic: str, lang: str, query_id:int=0) -> ThickQuery:
             dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
             The following mimics the function auto_lang()
             """
-            res, dom = wx.wikitextparse(wikitext, redundance=True)
-            dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
+            res, dom = pyetymology.eobjects.mwparserhelper.wikitextparse(wikitext, redundance=True)
+            dom = list(pyetymology.eobjects.mwparserhelper.sections_by_lang(dom, lang))  # expanded auto_lang()
 
             wikiresponse = None, res, dom
             bigQ = queryobjects.from_tupled(query, wikiresponse, origin)
@@ -65,15 +67,15 @@ def fetch_query(topic: str, lang: str, query_id:int=0) -> ThickQuery:
 
         dom, me, word, lang = auto_lang(dom, me, word, lang, mimic_input=mimic_input)
         """
-        res, dom = wx.wikitextparse(wikitext, redundance=True)
-        dom = list(wx.sections_by_lang(dom, lang))  # expanded auto_lang()
+        res, dom = pyetymology.eobjects.mwparserhelper.wikitextparse(wikitext, redundance=True)
+        dom = list(pyetymology.eobjects.mwparserhelper.sections_by_lang(dom, lang))  # expanded auto_lang()
         wikiresponse = None, res, dom
         bigQ = queryobjects.from_tupled(query, wikiresponse, origin)
          # don't do it over here because it is already done
         return bigQ
 def fetch_resdom(topic, redundance=False) -> Tuple[Wikicode, List[Wikicode]]:
     wt = fetch_wikitext(topic)
-    res, dom = wx.wikitextparse(wt, redundance=redundance)
+    res, dom = pyetymology.eobjects.mwparserhelper.wikitextparse(wt, redundance=redundance)
     return res, dom
 
 def is_eq__repr(G, G__repr):
@@ -107,11 +109,11 @@ def patch_multiple_input(monkeypatch, inputs: List[str]):
 
 class Test:
     def test_exact_prefix(self):
-        assert wx.has_exact_prefix("==Spanish==", "==")
-        assert not wx.has_exact_prefix("===Etymology===", "==")
+        assert pyetymology.eobjects.mwparserhelper.has_exact_prefix("==Spanish==", "==")
+        assert not pyetymology.eobjects.mwparserhelper.has_exact_prefix("===Etymology===", "==")
     def test_null_sections_by_level(self):
         dom = fetch_resdom("llevar")[1]
-        assert list(wx.sections_by_level(dom, 6)) == []
+        assert list(pyetymology.eobjects.mwparserhelper.sections_by_level(dom, 6)) == []
     def test_fetch(self):
         return  # don't make too many API queries
         Q1 = fetch_query("adelante", "Spanish")

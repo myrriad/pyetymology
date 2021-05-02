@@ -8,6 +8,8 @@ import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
+import pyetymology.eobjects.apiresult
+import pyetymology.eobjects.mwparserhelper
 from pyetymology import wikt_api as wx, etyobjects, main
 from pyetymology.etyobjects import MissingException
 from pyetymology.tests import assets, asset_llevar
@@ -27,7 +29,7 @@ class TestLlevar:
         monkeypatch.setattr('builtins.input', lambda _: "dummy_input")
 
         res, dom = fetch_resdom("llevar", redundance=True)
-        sections = list(wx.all_lang_sections(dom, flat=False)) #type: List[List[Wikicode]]
+        sections = list(pyetymology.eobjects.mwparserhelper.all_lang_sections(dom, flat=False)) #type: List[List[Wikicode]]
         assert len(sections) == 2
         catalan = sections[0][0]
         spanish = sections[1][0]
@@ -38,7 +40,7 @@ class TestLlevar:
         assert str(catalan) == catalantxt
         assert str(spanish) == spanishtxt
 
-        sections = list(wx.all_lang_sections(dom, flat=True)) #type: List[List[Wikicode]]
+        sections = list(pyetymology.eobjects.mwparserhelper.all_lang_sections(dom, flat=True)) #type: List[List[Wikicode]]
         assert len(sections) == 2
         catalan = sections[0]
         spanish = sections[1]
@@ -46,7 +48,7 @@ class TestLlevar:
         assert str(spanish) == spanishtxt
 
         res, dom = fetch_resdom("llevar", redundance=False)
-        sections = list(wx.all_lang_sections(dom)) #type: List[List[Wikicode]] # This has been changed, b/c the removal of antiredundance
+        sections = list(pyetymology.eobjects.mwparserhelper.all_lang_sections(dom)) #type: List[List[Wikicode]] # This has been changed, b/c the removal of antiredundance
         assert len(sections) == 2
         catalan = sections[0]
         spanish = sections[1]
@@ -55,7 +57,7 @@ class TestLlevar:
 
     def test_section_detect(self):
         res, dom = fetch_resdom("llevar", redundance=True)
-        secs = list(wx.sections_by_level(dom, 3)) # this is catalan
+        secs = list(pyetymology.eobjects.mwparserhelper.sections_by_level(dom, 3)) # this is catalan
         assert secs == [['===Etymology===\nFrom {{inh|ca|la|levāre}}, present active infinitive of {{m|la|levō}}.\n\n'],
                         ['===Pronunciation===\n* {{ca-IPA}}\n\n'],
                         ['===Verb===\n{{ca-verb}}\n\n# to [[remove]], to [[take out]]\n\n====Conjugation====\n{{ca-conj-ar|llev}}\n\n====Derived terms====\n* {{l|ca|llevaneu}}\n* {{l|ca|llevar-se}}\n\n',
@@ -64,7 +66,7 @@ class TestLlevar:
                         ['===Further reading===\n* {{R:IEC2}}\n* {{R:GDLC}}\n* {{R:DNV}}\n* {{R:DCVB}}\n\n----\n\n']]
     def test_flat_dom(self):
         res, dom = fetch_resdom("llevar", redundance=False)
-        secs = list(wx.sections_by_level(dom, 3))
+        secs = list(pyetymology.eobjects.mwparserhelper.sections_by_level(dom, 3))
         assert secs == [['===Etymology===\nFrom {{inh|ca|la|levāre}}, present active infinitive of {{m|la|levō}}.\n\n'],
                         ['===Pronunciation===\n* {{ca-IPA}}\n\n'],
                         ['===Verb===\n{{ca-verb}}\n\n# to [[remove]], to [[take out]]\n\n',
@@ -78,18 +80,21 @@ class TestLlevar:
         res, dom = fetch_resdom("llevar", redundance=True)
         monkeypatch.setattr('builtins.input', lambda _: "Spanish")
 
-        assert wx.reduce_to_one_lang(dom) == (list(wx.sections_by_lang(dom, "Spanish")), "Spanish")
+        assert pyetymology.eobjects.mwparserhelper.reduce_to_one_lang(dom) == (list(
+            pyetymology.eobjects.mwparserhelper.sections_by_lang(dom, "Spanish")), "Spanish")
 
         monkeypatch.setattr('builtins.input', lambda _: "Catalan")
 
-        assert wx.reduce_to_one_lang(dom) == (list(wx.sections_by_lang(dom, "Catalan")), "Catalan")
+        assert pyetymology.eobjects.mwparserhelper.reduce_to_one_lang(dom) == (list(
+            pyetymology.eobjects.mwparserhelper.sections_by_lang(dom, "Catalan")), "Catalan")
 
     def test_auto_lang_failure(self, monkeypatch):
 
         res, dom = fetch_resdom("llevar", redundance=True)
         monkeypatch.setattr('builtins.input', lambda _: "English")
         with pytest.raises(MissingException) as e_info:
-            wx.reduce_to_one_lang(dom) == (list(wx.sections_by_lang(dom, "Spanish")), "Spanish")
+            pyetymology.eobjects.mwparserhelper.reduce_to_one_lang(dom) == (list(
+                pyetymology.eobjects.mwparserhelper.sections_by_lang(dom, "Spanish")), "Spanish")
 
         assert e_info.value.G is None
         assert e_info.value.missing_thing == "language_section"

@@ -1,4 +1,4 @@
-from pyetymology.module import moduleimpl
+from pyetymology.emulate import moduleimpl
 
 
 def test_macron():

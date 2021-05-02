@@ -8,6 +8,8 @@ import pytest
 from _pytest import monkeypatch
 from mwparserfromhell.wikicode import Wikicode
 
+import pyetymology.eobjects.apiresult
+import pyetymology.eobjects.mwparserhelper
 from pyetymology import wikt_api as wx
 from pyetymology.tests import assets, asset_llevar
 import mwparserfromhell as mwp
@@ -18,7 +20,7 @@ from pyetymology.tests.test_ import fetch_wikitext, fetch_resdom, fetch_query
 class TestAdelante:
     def test_all_lang_sections(self):
         res, dom = fetch_resdom("adelante", redundance=True)
-        ls = list(wx.all_lang_sections(dom, flat=False))  # type: List[List[Wikicode]]
+        ls = list(pyetymology.eobjects.mwparserhelper.all_lang_sections(dom, flat=False))  # type: List[List[Wikicode]]
         sections = ls[0]
         wikicode = sections[0]
         a = str(wikicode)
@@ -31,7 +33,7 @@ class TestAdelante:
 
     def test_all_lang_sections_flat(self):
         res, dom = fetch_resdom("adelante", redundance=True)
-        sections = list(wx.all_lang_sections(dom, flat=True))  # type: List[Wikicode]
+        sections = list(pyetymology.eobjects.mwparserhelper.all_lang_sections(dom, flat=True))  # type: List[Wikicode]
         spanish = sections[0]
         a = str(spanish)
         b = fetch_wikitext("adelante")[18:]
@@ -41,7 +43,7 @@ class TestAdelante:
 
     def test_section_detect(self):
         res, dom = fetch_resdom("adelante", redundance=True)
-        secs = list(wx.sections_by_level(dom, 3))
+        secs = list(pyetymology.eobjects.mwparserhelper.sections_by_level(dom, 3))
         assert secs == [['===Pronunciation===\n* {{es-IPA}}\n* {{hyph|es|a|de|lan|te}}\n\n'],
                         ['===Etymology 1===\nFrom {{m|es|delante||in front}}.\n\n====Adverb====\n{{es-adv}}\n\n# [[forward]] {{gloss|toward the front}}\n# [[forward]] {{gloss|into the future}}\n\n=====Alternative forms=====\n* {{l|es|alante}} {{q|colloquial}}\n\n====Derived terms====\n{{der3|es\n|adelantar\n|de aquí en adelante\n|en adelante\n|Gran Salto Adelante\n|llevar adelante\n|más adelante\n|sacar adelante\n|salir adelante\n|seguir adelante}}\n\n====Interjection====\n{{head|es|interjection}}\n\n# [[come in]]\n# [[go ahead]]\n\n',
                             '====Adverb====\n{{es-adv}}\n\n# [[forward]] {{gloss|toward the front}}\n# [[forward]] {{gloss|into the future}}\n\n=====Alternative forms=====\n* {{l|es|alante}} {{q|colloquial}}\n\n',
@@ -54,7 +56,7 @@ class TestAdelante:
 
     def test_flat_dom(self):
         res, dom = fetch_resdom("adelante", redundance=False)
-        secs = list(wx.sections_by_level(dom, 3))
+        secs = list(pyetymology.eobjects.mwparserhelper.sections_by_level(dom, 3))
         assert secs == [['===Pronunciation===\n* {{es-IPA}}\n* {{hyph|es|a|de|lan|te}}\n\n'],
                         ['===Etymology 1===\nFrom {{m|es|delante||in front}}.\n\n',
                          '====Adverb====\n{{es-adv}}\n\n# [[forward]] {{gloss|toward the front}}\n# [[forward]] {{gloss|into the future}}\n\n',
@@ -69,7 +71,8 @@ class TestAdelante:
         res, dom = fetch_resdom("adelante", redundance=True)
         monkeypatch.setattr('builtins.input', lambda _: "dummy_input")
 
-        assert wx.reduce_to_one_lang(dom) == (list(wx.sections_by_lang(dom, "Spanish")), "Spanish")
+        assert pyetymology.eobjects.mwparserhelper.reduce_to_one_lang(dom) == (list(
+            pyetymology.eobjects.mwparserhelper.sections_by_lang(dom, "Spanish")), "Spanish")
 
     def test_graph(self, monkeypatch):
         monkeypatch.setattr('builtins.input', lambda _: "1")  # Multiple Definitions

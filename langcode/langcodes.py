@@ -1,3 +1,5 @@
+import warnings
+
 from pyetymology.langcode import famcodes, etycodes, gencodes
 
 
@@ -14,7 +16,5 @@ def name(code, use_ety=False, use_fam=False) -> str:
     return val
 
 def is_reconstr(code) -> bool:
-    return code[-4:] == "-pro"
-
-def is_name_reconstr(langname) -> bool:
-    return langname.startswith("Proto-")
+    warnings.warn("is_reconstr USES FLAWED LOGIC")
+    return code[-4:] == "-pro"  # TODO: Extremely flawed - See Old English
