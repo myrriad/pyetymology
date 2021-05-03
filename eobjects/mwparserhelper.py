@@ -1,5 +1,5 @@
 import string
-from typing import Tuple, List, Generator
+from typing import Tuple, List, Generator, Callable
 
 import mwparserfromhell as mwp
 from mwparserfromhell.wikicode import Wikicode
@@ -15,7 +15,7 @@ def wikitextparse(wikitext: str, redundance=False) -> Tuple[Wikicode, List[Wikic
     return res, dom
 
 
-def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=True, use_input=True) -> Tuple[List[Wikicode], str, str, str]:
+def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=True, use_input=True) -> Tuple[List[Wikicode], str]:
     """
     Returns sections of only 1 lang
     """
@@ -39,7 +39,7 @@ def reduce_to_one_lang(dom: List[Wikicode], use_lang: str=None, permit_abbrevs=T
             if use_lang:
                 usrin = use_lang
             elif use_input:  # if it's possible to read input from the console
-
+                # TODO End the use of use_input
                 usrin = fixins.input("Choose a lang from these options: " + str(lang_options))
             else:  # if such is not possible
                 raise MissingException(f"Could not auto-infer language from the languages {str(lang_options)}.", missing_thing="language_specification")

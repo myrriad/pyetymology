@@ -1,4 +1,5 @@
 import json
+import warnings
 from enum import Enum
 from typing import Optional
 
@@ -8,6 +9,7 @@ from requests import Response
 from pyetymology.eobjects.mwparserhelper import wikitextparse, reduce_to_one_lang
 # from pyetymology.eobjects.wikikey import WikiKey
 from pyetymology.etyobjects import MissingException
+from pyetymology.langhelper import Language
 
 session = requests.Session()
 session.mount("http://", requests.adapters.HTTPAdapter(max_retries=2))  # retry up to 2 times
@@ -23,10 +25,30 @@ class APIResult:
         check_json(self)
         self.wikitype = None
 
-    def load_wikitext(self, wkey:Optional['WikiKey']):
-        jsoninfo = parse_json(self, wkey)
+    def load_wikitext(self, wkey:Optional['WikiKey'], infer_lang=True, override_lang=False, resolve_multilang=None):
+        """
+        Setting infer_lang=True enables Lang Inferral
+        This means after this, Lang should be defined always, or an error thrown
+        """
+        jsoninfo = parse_json(self, wkey) # a lot of code here
+
+        """
+        # TODO: more graceful failure method. For example on failure, use a lambda to pick a language
+                    if resolve_multilang:
+                        resolve_multilang(wkey)
+                    else:
+                        raise ValueError(f'fullurl {fullurl} does not designate a language!') # default implementation of resolve_multilang is to throw an error
+                        """
         if jsoninfo[0] == "parse":
-            self.wikitype, self.wikitext, self.wikiresponse, self.dom, self.langname = jsoninfo
+            self.wikitype, self.wikitext, self.wikiresponse, self.dom, self.Lang = jsoninfo
+            if wkey.Lang and wkey.Lang.langqstr != self.Lang.langqstr: # Something's being overriden, which is bad
+                warnings.warn(f"Langname is being switched and overridden from {wkey.Lang.langname} to {self.Lang.langname} for word {wkey.word}! They should be the same!")
+            if infer_lang:
+                if not wkey.Lang:
+                    wkey.Lang = self.Lang
+            if override_lang:
+                wkey.Lang = self.Lang
+                # if Lang is something else, then we switched langs altogether. This is really weird
         elif jsoninfo[0] == "query":
             self.wikitype, self.derivs = jsoninfo
     @property
@@ -55,7 +77,11 @@ def check_json(result: APIResult):
         raise MissingException(
             f"Unexpected error, info not found. Url: {fullurl} JSON: {str(jsn['error'])}",
             missing_thing="everything")
-def parse_json(result: APIResult, wkey: Optional['WikiKey'] = None, mimic_input=None):
+def parse_json(result: APIResult, wkey: Optional['WikiKey'] = None, use_lang=None, resolve_multilang=None):
+    """
+    BUILT IN: Lang reducing function.
+    AFTER parse_json, lang should be defined ALWAYS, or an error thrown.
+    """
     jsn = result.jsn
 
     # the above will have thrown an error
@@ -73,15 +99,16 @@ def parse_json(result: APIResult, wkey: Optional['WikiKey'] = None, mimic_input=
         wikitext = jsn["parse"]["wikitext"]
         res, dom = wikitextparse(wikitext, redundance=False)
         # Here was the lang detection
-        dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else wkey.Lang.langname)
-        return "parse", wikitext, res, dom, langname
+        dom, langname = reduce_to_one_lang(dom, use_lang=use_lang if use_lang else wkey.Lang.langname)
+
+        title = jsn["parse"]["title"]
+        if title.startswith("Reconstruction:"):
+            # we have a reconstr on our hands
+            Lang = Language(langname=langname, is_reconstr=True)
+        else:
+            Lang = Language(langname=langname)
+        return "parse", wikitext, res, dom, Lang
     else:
         raise Exception(f"JSON malformed; top-level not found! (neither parse, query, nor error found) JSON: {jsn} URL: {result.fullurl}")
-
-
-
-
-class WikiParsedResult(APIResult):
-    pass
 
 

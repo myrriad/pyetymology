@@ -102,33 +102,25 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         wkey = WikiKey.from_query(me, warn=False) # we permit null langs here
         # word, biglang, qflags = pyetymology.queryobjects.query_to_qparts(me, warn=False) # missing language is an expected value
 
-
-    if wkey.Lang is None:
-        wkey.Lang = Language()
-
-    # word_urlify = urllib.parse.quote_plus(word)
+    # word_urlify = urllib.parse.quote_plus(word) # src = moduleimpl.to_link(word, biglang, qflags, warn=False)
     # src = "https://en.wiktionary.org/w/api.php?action=parse&page=" + word_urlify + "&prop=wikitext&formatversion=2&format=json"
-    # src = moduleimpl.to_link(word, biglang, qflags, warn=False)
     # we take the word and lang and parse it into the corresponding wikilink
-    # again, having a null Lang is fine here
+
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting
-    # TODO: and to load the page we need to know the word_urlify
-    # TODO: and word_urlify must remove macrons
+    # TODO: and to load the page we need to know the word_urlify, and word_urlify must remove macrons
     # https://en.wiktionary.org/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
 
     result = wkey.load_result() # result = APIResult(src) # this automatically throws on error
-    # result.load_wikitext(wkey)
-    wkey.load_wikitext()
+    wkey.load_wikitext(infer_lang=True)     # result.load_wikitext(wkey)
     # if wkey.deriv:
     #     if "query" in result.jsn:
     #         derivs = [pair["title"] for pair in result.jsn["query"]["categorymembers"]]
     #         origin = Originator(me, o_id=query_id)
     #         return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
-    if wkey.deriv:
-        if result.wikitype == 'query':
-            derivs = result.derivs
-            origin = Originator(me, o_id=query_id)
-            return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
+    if result.wikitype == 'query' and wkey.deriv:
+        derivs = result.derivs
+        origin = Originator(me, o_id=query_id)
+        return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
     # https://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:English_terms_derived_from_the_Proto-Indo-European_root_*ple%E1%B8%B1-&cmprop=title
     # elif "parse" in result.jsn:
     #     wikitext = result.jsn["parse"]["wikitext"]
@@ -141,16 +133,17 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     # Here was the lang detection
 
     # dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else biglang.langname)
-    assert langname
+    assert langname and langname == wkey.Lang.langname
     # if not wkey.Lang: # investigate the consequences of Lang switching
     # EDIT: it should be limited because wkey is never used and this merely updates the langname to always be correct
     # The only time this might backfire is if Language(langname=langname) malfunctions or is not bijective
     # the only time it fails is if wkey.Lang.langqstr changes unexpectedly
-    if wkey.Lang.langname != langname:
-        if not wkey.Lang:
-            # if Lang is something else, then we switched langs altogether. This is really weird
-            warnings.warn(f"Switching langs from {wkey.Lang.langname} to {langname}!")
-        wkey.Lang = Language(langname=langname) # This is where Lang inferral happens
+
+    # NOTE: the following is covered in wkey.load_wikitext(override_langname=True). That is where Lang inferral happens
+    # if wkey.Lang.langname !=langname:
+    #     if not wkey.Lang:
+            # warnings.warn(f"Switching langs from {wkey.Lang.langname} to {langname}!")
+        # wkey.Lang = Language(langname=langname) # This is where Lang inferral happens
     me = wkey.word + "#" + wkey.Lang.langqstr  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
     assert wkey.word
     assert langname
