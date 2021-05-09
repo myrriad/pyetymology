@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from mwparserfromhell.wikicode import Wikicode
 
@@ -15,15 +15,27 @@ class ThickQuery():
     def __init__(self,
                  me: str, word: str, langname: str, def_id: str,
                  res: Wikicode, wikitext: str, dom: List[Wikicode],
-                 origin: Originator, qflags: QueryFlags = None):
+                 origin: Originator, qflags: QueryFlags = None, wkey=None):
+        """
+        Deprecated.
+        ThickQuery.from_key(wkey) is HIGHLY recommended.
+
+        """
+        if not wkey:
+            wkey = WikiKey.from_qparts(word=word, Lang=Language(langname=langname), qflags=QueryFlags(def_id))
+        self.wkey = wkey
+
         self.me = me
         # self.word = word
         # self.lang = langname
 
         _word, _Lang, _qflags = query_to_qparts(me)
         # _def_id = _qflags.def_id
+        assert _qflags.def_id is not None # change: this will be 1 and is nonnull
         self.queryflags = _qflags
-        assert def_id == _qflags.def_id
+        if def_id is not None: # we have to permit None def_id because of archaic tupling pickling
+            if def_id != _qflags.def_id:
+                raise ValueError(f"{def_id} != {_qflags.def_id}")
         self.def_id = _qflags.def_id
 
         self.word = _word
@@ -60,22 +72,60 @@ class ThickQuery():
         return moduleimpl.to_link(self.word, self.biglang())
 
     @classmethod
-    def from_key(cls, wkey: WikiKey, me:str, origin):
-        return ThickQuery(me=me, word=wkey.word, langname=wkey.Lang.langname, def_id=wkey.def_id, res=wkey.result.wikiresponse, wikitext=wkey.result.wikitext, dom=wkey.result.dom, origin=origin)
-        pass
+    def from_key(cls, wkey: WikiKey, origin, me:str=None):
+        retn = ThickQuery.__new__(ThickQuery)
+        retn._init_from_wkey(wkey, origin, me)
+        return retn
+
+    def _init_from_wkey(self, wkey: WikiKey, origin, me:str=None, allow_none_result=False):
+        if not me:
+            me = wkey.me
+        if allow_none_result and not wkey.result:
+            res = wikitext = dom = None
+        else:
+            result = wkey.result
+            assert result is not None
+            res = result.wikiresponse
+            wikitext = result.wikitext
+            dom = result.dom
+        self.__init__(me=me, word=wkey.word, langname=wkey.Lang.langname, def_id=wkey.def_id, res=res, wikitext=wikitext, dom=dom, origin=origin, qflags=wkey.qflags,
+                      wkey=wkey)
 
 class DummyQuery(ThickQuery):
-    def __init__(self, me:str, origin:Originator, child_queries: List[str], with_lang:Language):
-        word, _Lang, _qflags = query_to_qparts(me)
-        biglang = with_lang
+    def __init__(self, wkey: WikiKey, with_lang:Language, origin:Originator,me:Optional[str]=None):
+        if not me:
+            me = wkey.me
+        """
+                derivs = result.derivs
+        origin = Originator(me, o_id=query_id)
+        return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
+        """
+        word, _, _qflags = query_to_qparts(me)
 
-        me2 = word + "#" + biglang.langqstr
-        lang = biglang.langname
-        def_id = _qflags.def_id
-        super().__init__(me=me2, word=word, langname=lang, def_id=def_id, res=None, wikitext=None, dom=None, origin=origin, qflags=_qflags)
-        self.child_queries = child_queries
+        # me2 = word + "#" + with_lang.langqstr
+        # langname = with_lang.langname
+        # def_id = _qflags.def_id
+
+        wkey2 = WikiKey.from_qparts(word, with_lang, _qflags)
+        assert wkey2.result is None
+        # wkey2.me == word +"#"+with_lang.qstr
+        super()._init_from_wkey(wkey2, origin, allow_none_result=True)
+        # (me=wkey2.me, word=wkey.word, langname=wkey.Lang.langname, def_id=wkey.def_id, res=wkey.result.wikiresponse, wikitext=wkey.result.wikitext, dom=wkey.result.dom, origin=origin)
+        # (me=me2, word=word, langname=langname, def_id=def_id, res=None, wikitext=None, dom=None, origin=origin, qflags=_qflags)
+
+        # perfectly equivalent to old code
+        self.child_queries = wkey.result.derivs
 
 def from_tupled(query: Tuple[str, str, str, str], wikiresponse: Tuple[Wikicode, str, List[Wikicode]], origin: Originator):
+    """
+    Archaic terribleness from before the usage of WikiKey.
+    """
+
+    # me, word, langname, def_id = query
+    # res, wikitext, dom = wikiresponse
+    # origin: Originator, qflags: QueryFlags = None
+    # wkey = WikiKey.from_me(me)
+    # wkey2 = WikiKey.from_qparts(word, Language(langname=langname),qflags=QueryFlags(def_id=def_id))
     return ThickQuery(*query, *wikiresponse, origin)
 
 

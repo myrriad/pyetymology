@@ -90,6 +90,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     if me.startswith("http://") or me.startswith("https://"):
         wkey = WikiKey.from_regurl(me) # build from a url
         result = wkey.result
+        me = wkey.me # turn the url into a standard string me
     else:
         done = False # build from a plaintext string
         if working_G:
@@ -113,9 +114,9 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
 
 
     if result.wikitype == 'query' and wkey.deriv:
-        derivs = result.derivs
-        origin = Originator(me, o_id=query_id)
-        return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
+        # derivs = result.derivs
+        # return DummyQuery(me=me, origin=origin, child_queries=derivs, with_lang=Language(langcode="en"))
+        return DummyQuery(wkey, with_lang=Language(langcode="en"), origin=Originator(me, o_id=query_id),me=me)
     elif result.wikitype == 'parse':
         wikitext, res, dom, langname = result.wikitext, result.wikiresponse, result.dom, result.langname
     # Here was the lang detection
@@ -127,12 +128,12 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     # The only time this might backfire is if Language(langname=langname) malfunctions or is not bijective
     # the only time it fails is if wkey.Lang.langqstr changes unexpectedly
 
-    me = wkey.word + "#" + wkey.Lang.langqstr  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
+    # me = wkey.me  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
     assert wkey.word
     assert langname
 
-    origin = Originator(me, o_id=query_id)
-    return ThickQuery.from_key(wkey, me, origin)  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
+    origin = Originator(wkey.me, o_id=query_id)
+    return ThickQuery.from_key(wkey, origin)  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
 
 
 def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False, cog_lang_filter=None) -> nx.DiGraph:

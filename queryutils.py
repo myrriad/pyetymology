@@ -24,6 +24,9 @@ def node_to_qparts(node: Union['EtyRelation', 'LemmaRelation', None]) -> Tuple[s
 
 
 def query_to_qparts(query: str, warn=True, crash=False) -> Tuple[str, Language, QueryFlags]:
+    """
+    The returned qflags and qflags.def_id WILL be initialized and is guaranteed nonnull.
+    """
     assert query
     do_deriv = ""
     if query.startswith("#"):

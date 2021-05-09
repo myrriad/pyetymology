@@ -39,6 +39,10 @@ class WikiKey:
     def def_id(self):
         return self.qflags.def_id
 
+    @property
+    def me(self):
+        return self.word + "#" + self.Lang.langqstr
+
     def load_result(self, result:Optional[APIResult]=None):
         if result:
             self.result = result
@@ -68,12 +72,16 @@ class WikiKey:
     @classmethod
     def from_node(cls, node: Union[EtyRelation, LemmaRelation, None]) -> WikiKey:
         word, Lang, qflags = node_to_qparts(node)
-        return WikiKey.from_qparts(word, Lang, qflags)
+        return cls.from_qparts(word, Lang, qflags)
 
     @classmethod
-    def from_query(cls, query: str, warn=True, crash=False) -> Tuple[str, Language, QueryFlags]:
+    def from_query(cls, query: str, warn=True, crash=False) -> WikiKey:
         word, Lang, qflags = query_to_qparts(query, warn, crash)
-        return WikiKey.from_qparts(word, Lang, qflags)
+        return cls.from_qparts(word, Lang, qflags)
+
+    @classmethod
+    def from_me(cls, me: str, warn=True, crash=False) -> WikiKey:
+        return cls.from_query(me, warn, crash)
 
     @classmethod
     def from_regurl(cls, url: str, cmlimit=50):
@@ -98,10 +106,10 @@ class WikiKey:
             langtag = ''
         # put this in there to really make sure that no bad data gets in here, debugging wise
         if urlpart.startswith("Category:"):
-            return WikiKey.from_fullurl(
+            return cls.from_fullurl(
                 f"http://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle={urlpart}&cmprop=title"
                 f"&format=json&cmlimit={cmlimit}{f'#{langtag}' if langtag else ''}")
-        return WikiKey.from_fullurl(
+        return cls.from_fullurl(
             f"https://en.wiktionary.org/w/api.php?action=parse&page={urlpart}&prop=wikitext&formatversion=2&format=json#{langtag}")
     # TODO: SANITATION HELL
 
