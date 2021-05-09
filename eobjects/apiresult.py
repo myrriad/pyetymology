@@ -54,6 +54,9 @@ class APIResult:
     @property
     def text(self):
         return self.response.text
+    @property
+    def langname(self):
+        return self.Lang.langname
 def make_http_request(fullurl: str, online=True):
     if online:
         global session

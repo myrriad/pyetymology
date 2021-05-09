@@ -50,4 +50,6 @@ def query_to_qparts(query: str, warn=True, crash=False) -> Tuple[str, Language, 
         raise ValueError("Language inferral (or having a blank language in your query) is not permitted/expected.")
     _Lang = Language(langqstr=langqstr, warn=warn)
     # The only time langqstr can be empty is if the function was specifically authorized to allow no-langs.
+    if def_id == None:
+        def_id = 1 # new default value for def_id
     return word, _Lang, QueryFlags(def_id=def_id, deriv=do_deriv)

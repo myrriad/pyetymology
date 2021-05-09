@@ -90,13 +90,17 @@ class WikiKey:
         elif url.startswith("http://"):
             url = url[7:]
         assert url.startswith("en.wiktionary.org/wiki/")
-        urlpart = url[23:url.index('#')]
-        langtag = url[url.index('#')+1:]
+        if '#' in url:
+            urlpart = url[23:url.index('#')]
+            langtag = url[url.index('#')+1:]
+        else:
+            urlpart = url[23:]
+            langtag = ''
         # put this in there to really make sure that no bad data gets in here, debugging wise
         if urlpart.startswith("Category:"):
             return WikiKey.from_fullurl(
                 f"http://en.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle={urlpart}&cmprop=title"
-                f"&format=json&cmlimit={cmlimit}#{langtag}")
+                f"&format=json&cmlimit={cmlimit}{f'#{langtag}' if langtag else ''}")
         return WikiKey.from_fullurl(
             f"https://en.wiktionary.org/w/api.php?action=parse&page={urlpart}&prop=wikitext&formatversion=2&format=json#{langtag}")
     # TODO: SANITATION HELL
