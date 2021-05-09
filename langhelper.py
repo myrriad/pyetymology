@@ -64,8 +64,23 @@ class Language:
         return bool(self.langcode or self.langname)
 
     def __eq__(self, other):
-        return isinstance(other, Language) and self.langcode == other.langcode and self.langname == other.langname and self.reconstr == other.reconstr
+        if isinstance(other, Language) and bool(self) == bool(other) and self.reconstr == other.reconstr:
+            if self.langcode and other.langcode:
+                if self.langname and other.langname:
+                    return self.langcode == other.langcode and self.langname == other.langname
+                else:
+                    return self.langcode == other.langcode
+            else:
+                if self.langname and other.langname:
+                    return self.langname == other.langname
+                else:
+                    # Nothing matches. Perhaps it's self.langcode vs other.langname
+                    return False
+        else:
+            return False
 
+
+        return False
     def __str__(self):
         return self.langqstr if self else ""
 

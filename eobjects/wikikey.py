@@ -145,3 +145,9 @@ class WikiKey:
             raise NotImplementedError() # TODO FINISH
         else:
             raise TypeError(f"wkey has unexpected result {wkey.result.wikitype}")
+
+    def __eq__(self, other):
+        if isinstance(other, WikiKey):
+            return self.fullurl == other.fullurl and self.Lang == other.Lang and self.def_id == other.def_id
+        return False
+
