@@ -87,7 +87,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     if not me:
         me = input("Enter a query: " + me) # me will usually be no-lang, so treat it as such and don't warn
 
-    if me.startswith("http://") or me.startswith("https://"):
+    if me.startswith("http://") or me.startswith("https://") or me.startswith("en.wiktionary.org/wiki/"):
         wkey = WikiKey.from_regurl(me) # build from a url
         result = wkey.result
         me = wkey.me # turn the url into a standard string me
@@ -95,13 +95,14 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
         done = False # build from a plaintext string
         if working_G:
             node = find_node_by_query(working_G, me, warn=False)
-            wkey = WikiKey.from_node(node)
-            if wkey:
-                # word = wkey.word
-                # biglang = wkey.Lang
-                assert wkey.qflags is None
-                wkey.qflags = pyetymology.queryutils.query_to_qparts(me, warn=False)[2] # merge query and node
-                done = True
+            if node:
+                wkey = WikiKey.from_node(node)
+                if wkey:
+                    # word = wkey.word
+                    # biglang = wkey.Lang
+                    assert wkey.qflags is None
+                    wkey.qflags = pyetymology.queryutils.query_to_qparts(me, warn=False)[2] # merge query and node
+                    done = True
         if not done: # default condition
             wkey = WikiKey.from_query(me, warn=False) # we permit null langs here
         result = wkey.load_result()  # this automatically throws on error
@@ -133,7 +134,7 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     assert langname
 
     origin = Originator(wkey.me, o_id=query_id)
-    return ThickQuery.from_key(wkey, origin)  # TODO: transition this and ThickQuery to use Langs and thus to remember reconstr
+    return ThickQuery.from_key(wkey, origin)  # DID: transition this and ThickQuery to use Langs and thus to remember reconstr (DONE via WikiKey)
 
 
 def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False, cog_lang_filter=None) -> nx.DiGraph:
@@ -180,10 +181,11 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
 
 
     entries = lexer.lex(dom)  #type: List[Entry]
-    if def_id is None and len(entries) > 1:
-        def_id = input("Multiple definitions detected. Enter an ID: ")
-        if def_id == "":
-            def_id = 1
+    if len(entries) > 1:
+        if def_id is None:
+            def_id = input("Multiple definitions detected. Enter an ID: ")
+            if def_id == "":
+                def_id = 1
         entry = entries[int(def_id) - 1] # wiktionary is 1-indexed, but our lists are 0-indexed
     # for entry in entries.entrylist:
     else:

@@ -3,6 +3,7 @@ Use a Wikikey to keep track of wikiresources
 """
 from __future__ import annotations # let me type hint class in own class
 
+import warnings
 from typing import Optional, Union, Tuple
 
 from pyetymology.emulate import moduleimpl
@@ -41,7 +42,7 @@ class WikiKey:
 
     @property
     def me(self):
-        return self.word + "#" + self.Lang.langqstr
+        return f"{self.word}#{self.Lang.langqstr}#{self.def_id}" # the most verbose option because then we retain all of the info
 
     def load_result(self, result:Optional[APIResult]=None):
         if result:
@@ -58,15 +59,21 @@ class WikiKey:
         self.result.load_wikitext(self, infer_lang=infer_lang, override_lang=override_lang)
     def __bool__(self):
         return bool(self.word or self.Lang)
+    def __eq__(self, other):
+        if isinstance(other, WikiKey):
+            return self.fullurl == other.fullurl and self.Lang == other.Lang and self.def_id == other.def_id
+        return False
 
     @classmethod
-    def from_qparts(cls, word: str, Lang: Language, qflags: QueryFlags):
+    def from_qparts(cls, word: str, Lang: Language, qflags: QueryFlags, warn_empty=True):
         retn = WikiKey() # word, Lang, qflags)
         retn.word = word
         retn.Lang = Lang
         retn.qflags = qflags
         retn.result = None #type: Optional[APIResult]
         retn.src = moduleimpl.to_link(word, Lang, qflags, warn=False)
+        if warn_empty and not bool(retn):
+            warnings.warn(f"The created wikikey {retn} is empty!")
         return retn
 
     @classmethod
@@ -158,8 +165,5 @@ class WikiKey:
         else:
             raise TypeError(f"wkey has unexpected result {wkey.result.wikitype}")
 
-    def __eq__(self, other):
-        if isinstance(other, WikiKey):
-            return self.fullurl == other.fullurl and self.Lang == other.Lang and self.def_id == other.def_id
-        return False
+
 

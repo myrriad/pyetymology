@@ -46,6 +46,7 @@ def query_to_qparts(query: str, warn=True, crash=False) -> Tuple[str, Language, 
         word, langqstr = terms
     elif len(terms) == 3:
         word, langqstr, def_id = terms
+        def_id = int(def_id)
     else:
         raise Exception(
             f'Query string "{query}" has an unsupported number of arguments! There should be either 1-3 terms only,')

@@ -8,7 +8,7 @@ from pyetymology.langhelper import Language
 
 
 class QueryFlags:
-    def __init__(self, def_id, deriv=False):
+    def __init__(self, def_id: int, deriv=False):
         self.def_id = def_id
         self.deriv = deriv
 
