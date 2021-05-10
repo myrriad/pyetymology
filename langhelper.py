@@ -32,6 +32,9 @@ class Language:
             elif langqstr.startswith("Reconstruction:"):
                 self.langname = langqstr[15:]
                 self.reconstr = True
+            elif langqstr.startswith("Proto-"): # Workaround while I get wikikey working on the prod version
+                self.langname = langqstr
+                self.reconstr = True
             else:
                 if not langname:
                     langname = langqstr
