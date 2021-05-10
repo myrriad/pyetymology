@@ -82,32 +82,38 @@ def find_node_by_query(GG: nx.DiGraph, query: str, warn=True) -> Union[WordRelat
     return retn[0]
 
 
-def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> Union[ThickQuery, List[str]]:
+def query(me: Union[str, WikiKey], query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGraph=None) -> Union[ThickQuery, List[str]]:
 
     if not me:
         me = input("Enter a query: " + me) # me will usually be no-lang, so treat it as such and don't warn
 
-    if me.startswith("http://") or me.startswith("https://") or me.startswith("en.wiktionary.org/wiki/"):
-        wkey = WikiKey.from_regurl(me) # build from a url
+    if isinstance(me, WikiKey):
+        wkey = me
         result = wkey.result
-        me = wkey.me # turn the url into a standard string me
+        me = wkey.me
+    elif isinstance(me, str):
+        if me.startswith("http://") or me.startswith("https://") or me.startswith("en.wiktionary.org/wiki/"):
+            wkey = WikiKey.from_regurl(me) # build from a url
+            result = wkey.result
+            me = wkey.me # turn the url into a standard string me
+        else:
+            done = False # build from a plaintext string
+            if working_G:
+                node = find_node_by_query(working_G, me, warn=False)
+                if node:
+                    wkey = WikiKey.from_node(node)
+                    if wkey:
+                        # word = wkey.word
+                        # biglang = wkey.Lang
+                        assert wkey.qflags is None
+                        wkey.qflags = pyetymology.queryutils.query_to_qparts(me, warn=False)[2] # merge query and node
+                        done = True
+            if not done: # default condition
+                wkey = WikiKey.from_query(me, warn=False) # we permit null langs here
+            result = wkey.load_result()  # this automatically throws on error
+            wkey.load_wikitext(infer_lang=True) # right here is the lang inferral
     else:
-        done = False # build from a plaintext string
-        if working_G:
-            node = find_node_by_query(working_G, me, warn=False)
-            if node:
-                wkey = WikiKey.from_node(node)
-                if wkey:
-                    # word = wkey.word
-                    # biglang = wkey.Lang
-                    assert wkey.qflags is None
-                    wkey.qflags = pyetymology.queryutils.query_to_qparts(me, warn=False)[2] # merge query and node
-                    done = True
-        if not done: # default condition
-            wkey = WikiKey.from_query(me, warn=False) # we permit null langs here
-        result = wkey.load_result()  # this automatically throws on error
-        wkey.load_wikitext(infer_lang=True)
-
+        raise TypeError(f"{me} has an unsupported type {type(me)}")
     # we take the word and lang and parse it into the corresponding wikilink
     # TODO: we don't know that the lang is Latin until after we load the page if we're autodetecting, and to load the page we need to know the word_urlify, and word_urlify must remove macrons
     # https://en.wiktionary.org/w/api.php?action=parse&page=word&prop=wikitext&formatversion=2&format=json
@@ -123,18 +129,22 @@ def query(me, query_id=0, mimic_input=None, redundance=False, working_G: nx.DiGr
     # Here was the lang detection
 
     # dom, langname = reduce_to_one_lang(dom, use_lang=mimic_input if mimic_input else biglang.langname)
-    assert langname and langname == wkey.Lang.langname
+    if langname and langname == wkey.Lang.langname:
+        pass
+    else:
+        raise ValueError(f"Discrepancy between given and inferred langs. Given:{wkey.Lang.langname} Inferred:{langname}")
     # if not wkey.Lang: # investigate the consequences of Lang switching
     # EDIT: it should be limited because wkey is never used and this merely updates the langname to always be correct
     # The only time this might backfire is if Language(langname=langname) malfunctions or is not bijective
     # the only time it fails is if wkey.Lang.langqstr changes unexpectedly
 
     # me = wkey.me  # word stays the same, even with the macron bs. however lang might change b/c of auto_lang.
-    assert wkey.word
-    assert langname
+    if not (wkey.word and langname):
+        raise ValueError(f"word/lang not available. Word:{wkey.word} lang:{langname}")
 
     origin = Originator(wkey.me, o_id=query_id)
     return ThickQuery.from_key(wkey, origin)  # DID: transition this and ThickQuery to use Langs and thus to remember reconstr (DONE via WikiKey)
+
 
 
 def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sideways=False, cog_lang_filter=None) -> nx.DiGraph:

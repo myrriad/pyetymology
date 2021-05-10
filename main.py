@@ -39,7 +39,7 @@ def mainloop(test_queries:List[Tuple[str, str]] = None, draw_graphs=True, cog_se
                 print("Prematurely exiting!")
                 return _EXIT
         else:
-            _q1 = ety.query(original_query, query_id=total_queries, working_G=working_G)
+            _q1 = ety.query(me=original_query, query_id=total_queries, working_G=working_G)
         total_queries += 1
         return _q1
 
