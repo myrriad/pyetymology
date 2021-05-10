@@ -8,7 +8,7 @@ from pyetymology.etyobjects import InputException
 _is_plot_active = False
 
 def input(__prompt: Any) -> str:
-    raise InputException("Unable to read from console.") from None
+    # raise InputException("Unable to read from console.") from None
     global _is_plot_active
     if _is_plot_active:
         print("Close MatplotLib to Continue")
