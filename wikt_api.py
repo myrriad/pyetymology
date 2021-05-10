@@ -37,6 +37,17 @@ from pyetymology.eobjects.fixins import input
 
 online = True # TODO: online=False displays wrong versions of ety trees without throwing an exception
 
+import os
+import builtins
+
+if os.name == 'nt': # if we're on windows, printing unicode messes up. Only do this on the "production" version
+    # sys.stdout = NullIO()
+    _print = print
+    def nprint(*args,**kwargs):
+        pass
+    builtins.print = nprint
+    print = nprint 
+
 def is_in(elem, abbr_set: Dict[str, str]):
     return elem in abbr_set.keys() or elem in abbr_set.values()
 
