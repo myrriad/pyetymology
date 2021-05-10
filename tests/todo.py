@@ -113,3 +113,5 @@ to comply with the fundamental concept of showing dependence through nesting.
 #URGENT
 
  # TODO: soft crashing for all of the asserts that I have
+
+# empezar: 'charmap' codec can't encode character '\u0101' in position 152: character maps to <undefined>

@@ -316,6 +316,13 @@ class DescentRelation(WordRelation):
     def __repr__(self):
         return "$" + str(self.origin.o_id) + str(self)
 
+class DisrepancyError(Exception):
+    def __init__(self, message, descrepancy=None, G:nx.DiGraph = None):
+        super().__init__(self, message)
+        self.G = G
+        self.descrepancy = descrepancy
+        self.message = message
+
 class MissingException(Exception):
 
     def __init__(self, message, missing_thing=None, G:nx.DiGraph = None):

@@ -1,7 +1,7 @@
 """
 Use a Wikikey to keep track of wikiresources
 """
-from __future__ import annotations # let me type hint class in own class
+# from __future__ import annotations # let me type hint class in own class
 
 import warnings
 from typing import Optional, Union, Tuple
@@ -77,17 +77,17 @@ class WikiKey:
         return retn
 
     @classmethod
-    def from_node(cls, node: Union[EtyRelation, LemmaRelation, None]) -> WikiKey:
+    def from_node(cls, node: Union[EtyRelation, LemmaRelation, None]) -> 'WikiKey':
         word, Lang, qflags = node_to_qparts(node)
         return cls.from_qparts(word, Lang, qflags)
 
     @classmethod
-    def from_query(cls, query: str, warn=True, crash=False) -> WikiKey:
+    def from_query(cls, query: str, warn=True, crash=False) -> 'WikiKey':
         word, Lang, qflags = query_to_qparts(query, warn, crash)
         return cls.from_qparts(word, Lang, qflags)
 
     @classmethod
-    def from_me(cls, me: str, warn=True, crash=False) -> WikiKey:
+    def from_me(cls, me: str, warn=True, crash=False) -> 'WikiKey':
         return cls.from_query(me, warn, crash)
 
     @classmethod

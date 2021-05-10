@@ -7,7 +7,6 @@ import pyetymology.emulate.template2url
 import pyetymology.queryobjects
 import pyetymology.queryutils
 from pyetymology.eobjects import fixins
-from pyetymology.eobjects.mwparserhelper import wikitextparse, reduce_to_one_lang
 from pyetymology.eobjects.wikikey import WikiKey
 from pyetymology.langhelper import Language
 from pyetymology.queryobjects import ThickQuery, DummyQuery
@@ -27,7 +26,7 @@ import mwparserfromhell
 # from mwparserfromhell.wikicode import Wikicode
 
 from pyetymology.etyobjects import EtyRelation, WordRelation, Originator, LemmaRelation, DescentRelation, \
-    MissingException
+    MissingException, DisrepancyError
 from pyetymology.lexer import Header
 
 from pyetymology.eobjects.fixins import input
@@ -132,7 +131,7 @@ def query(me: Union[str, WikiKey], query_id=0, mimic_input=None, redundance=Fals
     if langname and langname == wkey.Lang.langname:
         pass
     else:
-        raise ValueError(f"Discrepancy between given and inferred langs. Given:{wkey.Lang.langname} Inferred:{langname}")
+        raise ValueError(f"Discrepancy between given lang {wkey.Lang.langname} and inferred lang {langname}")
     # if not wkey.Lang: # investigate the consequences of Lang switching
     # EDIT: it should be limited because wkey is never used and this merely updates the langname to always be correct
     # The only time this might backfire is if Language(langname=langname) malfunctions or is not bijective
@@ -234,12 +233,13 @@ def parse_and_graph(_Query, existent_node: EtyRelation=None, make_mentions_sidew
                     if isinstance(node, mwparserfromhell.wikicode.Text) and "." in node:  # if we reach the end
                         firstsentence.append(
                             node[:node.index(".") + 1])  # get everything up to, and including, the period
+                        # tomar
                         dotyet = True
                     else:
                         firstsentence.append(
                             node)  # if we haven't reached the period, we're in the middle. capture that node
 
-        print("1st sentence is " + repr(firstsentence))
+        # print("1st sentence is " + repr(firstsentence))
         ancestry = []
         # prev = origin
         # start graphing
