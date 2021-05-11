@@ -3,7 +3,7 @@ from typing import Tuple
 
 
 def urllang(lang: str):
-    return urllib.parse.quote_plus(lang.langname.replace(" ", "-"))
+    return urllib.parse.quote_plus(lang.langname.replace(" ", "_")) # Proto-West Germanic --> Proto-West_Germanic
 
 
 def urlify(word):
